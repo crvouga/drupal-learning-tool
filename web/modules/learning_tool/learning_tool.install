@@ -1,7 +1,4 @@
 <?php
-
-
-
 /**
  *  hook_install()
  */
@@ -15,7 +12,7 @@ function learning_tool_install()
  */
 function learning_tool_schema()
 {
-    $schema['learning_tool_lti'] = array(
+    $schema['learning_tool_platforms'] = array(
         'description' => 'Store LTI 1.3 data',
         'fields' => array(
             'json_string' => array(

@@ -25,3 +25,17 @@ learning_tool.login:
     _controller: Drupal\learning_tool\Controller\LearningToolController::login
   requirements:
     _permission: "access content"
+
+learning_tool.register_moodle:
+  path: /learning-tool/register/moodle
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::register_moodle
+  requirements:
+    _permission: "access content"
+
+learning_tool.platforms:
+  path: /learning-tool/platforms
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::list_platforms
+  requirements:
+    _permission: "access content"
