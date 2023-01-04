@@ -8,36 +8,26 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class LearningToolController
 {
-    public function index()
+    public function launch()
     {
         return array(
-            '#title' => 'Hello from learning tool controller!',
-            '#markup' => 'Here is some content.',
+            '#title' => 'Launched',
+            '#markup' => 'Here is some content to learn from.',
         );
     }
-
-    public function deep_linking()
+    public function launch_deep_linking()
     {
         return array(
             '#title' => 'Deep Linking',
             '#markup' => 'Select some content to deep link',
         );
     }
-
-
     public function keyset()
     {
-
-        $db = new LTIDatabase();
-        
-        $found = $db->find_registration_by_issuer("moodle");
-
         return new JsonResponse([
-            'message' => 'hello from keyset',
-            'found' => $found,
+            'message' => 'hello from keyset'    
         ]);
     }
-
     public function login()
     {
         return new JsonResponse([
@@ -46,6 +36,29 @@ class LearningToolController
     }
 }
 
+/* 
+
+Local Moodle LTI Config
+
+url: "http://localhost:8888/moodle",
+name: "Moodle",
+clientId: "zFADOCswVIf6d77",
+authenticationEndpoint: "http://localhost:8888/moodle/mod/lti/auth.php",
+accesstokenEndpoint: "http://localhost:8888/moodle/mod/lti/token.php",
+authConfig: {
+    method: "JWK_SET",
+    key: "http://localhost:8888/moodle/mod/lti/certs.php",
+},
+*/
+
+
+// $moodleConfig = [
+//     'url' => 'http://localhost:8888/moodle',
+//     'client_id' => 'zFADOCswVIf6d77',
+//     'authentication_endpoint' => 'http://localhost:8888/moodle/mod/lti/auth.php',
+//     'access_token_endpoint' => 'http://localhost:8888/moodle/mod/lti/token.php',
+//     'key_set_url' => 'http://localhost:8888/moodle/mod/lti/certs.php'
+// ];
 
 /**
  * 
@@ -64,7 +77,7 @@ class LTIDatabase implements LTI\Database
             return false;
         }
 
-        $issuer_row = $results[0];
+        $issuer_row = json_decode($results[0]);
 
         if(!$issuer_row) {
             return false;

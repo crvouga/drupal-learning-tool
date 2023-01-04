@@ -1,14 +1,14 @@
-learning_tool.index:
-  path: /learning-tool
+learning_tool.launch:
+  path: /learning-tool/launch
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::index
+    _controller: Drupal\learning_tool\Controller\LearningToolController::launch
   requirements:
     _permission: "access content"
 
-learning_tool.deep_linking:
-  path: /learning-tool
+learning_tool.launch_deep_linking:
+  path: /learning-tool/launch-deep-linking
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::deep_linking
+    _controller: Drupal\learning_tool\Controller\LearningToolController::launch_deep_linking
   requirements:
     _permission: "access content"
 
