@@ -33,6 +33,13 @@ learning_tool.register_moodle:
   requirements:
     _permission: "access content"
 
+learning_tool.unregister_moodle:
+  path: /learning-tool/unregister/moodle
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::unregister_moodle
+  requirements:
+    _permission: "access content"
+
 learning_tool.platforms:
   path: /learning-tool/platforms
   defaults:

@@ -2,12 +2,13 @@
 
 namespace Drupal\learning_tool\Controller;
 
+use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use \IMSGlobal\LTI;
-use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 
-class LearningToolController
+class LearningToolController extends ControllerBase
 {
     public function launch()
     {
@@ -31,9 +32,17 @@ class LearningToolController
     }
     public function login()
     {
-        return new JsonResponse([
-            'message' => 'Hello from login!',
-        ]);
+        $db = new LTI_Database();
+        
+        $login = LTI\LTI_OIDC_Login::new($db);
+        // TODO: don't hardcode this
+        $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
+
+        $redirect = $login->do_oidc_login_redirect($launch_url, $_REQUEST);
+
+        $redirect_url = $redirect->get_redirect_url();
+
+        return new TrustedRedirectResponse($redirect_url);
     }
 
     // 
@@ -41,18 +50,22 @@ class LearningToolController
     // 
     // 
     // 
-    public function register_moodle() {
-        $platform_data= [
+    public function register_moodle() {    
+        $result = register_platform([
+            "name" => "Moodle",
             "issuer" => "http://localhost:8888/moodle",
-            "client_id" => "zFADOCswVIf6d77",
+            "client_id" => "s6KjUEZZsAQfTWy",
             "auth_login_url" => "http://localhost:8888/moodle/mod/lti/auth.php",
             "auth_token_url" => "http://localhost:8888/moodle/mod/lti/token.php",
             "key_set_url" => "http://localhost:8888/moodle/mod/lti/certs.php",
-            "name" => "Moodle",
-        ];
-        
-        $result = register_platform($platform_data);
+        ]);
+        return new JsonResponse($result);
+    }
 
+    public function unregister_moodle() {
+        $result = unregister_platform([
+            "issuer"=> "http://localhost:8888/moodle"
+        ]);
         return new JsonResponse($result);
     }
 
@@ -77,7 +90,7 @@ class LearningToolController
  * 
  */
 
-class LTIDatabase implements LTI\Database
+class LTI_Database implements LTI\Database
 {
     public function find_registration_by_issuer($iss) {
         $database = \Drupal::service('database');
@@ -131,7 +144,7 @@ function register_platform($input)
     ];
 
     if(!has_keys($input, $required_keys)) {
-        return ['err', 'missing required keys'];
+        return err("missing required keys");
     }
 
     $fields = [
@@ -141,9 +154,34 @@ function register_platform($input)
 
     \Drupal::service('database')->insert('learning_tool_platforms')->fields($fields)->execute();
 
-    return ['ok', 'platform registered'];
+    return ok("registered platform");
 }
 
+
+function unregister_platform($input) {
+    $required_keys = [
+        "issuer",
+    ];
+
+    if(!has_keys($input, $required_keys)) {
+        return err("missing required keys");
+    }
+
+    \Drupal::service('database')->delete('learning_tool_platforms')->condition('issuer', $input['issuer'])->execute();
+
+    return ok("unregistered platform");
+}
+
+
+function ok($data)
+{
+    return ["type" => "ok", "data" => $data];
+}
+
+function err($err)
+{
+    return ["type" => "err", "err" => $err];
+}
 
 function has_keys($input, $required_keys)
 {
