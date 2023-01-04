@@ -12,6 +12,10 @@
         {
             "type": "composer",
             "url": "https://packages.drupal.org/8"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/IMSGlobal/lti-1-3-php-library"
         }
     ],
     "require": {
@@ -19,7 +23,8 @@
         "drupal/console": "~1.0",
         "drupal/core-composer-scaffold": "^8.8",
         "drupal/core-project-message": "^8.8",
-        "drupal/core-recommended": "^8.8"
+        "drupal/core-recommended": "^8.8",
+        "imsglobal/lti-1p3-tool": "dev-master"
     },
     "conflict": {
         "drupal/drupal": "*"

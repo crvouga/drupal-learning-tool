@@ -1,0 +1,27 @@
+learning_tool.index:
+  path: /learning-tool
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::index
+  requirements:
+    _permission: "access content"
+
+learning_tool.deep_linking:
+  path: /learning-tool
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::deep_linking
+  requirements:
+    _permission: "access content"
+
+learning_tool.keyset:
+  path: /learning-tool/keyset
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::keyset
+  requirements:
+    _permission: "access content"
+
+learning_tool.login:
+  path: /learning-tool/login
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::login
+  requirements:
+    _permission: "access content"

@@ -1,0 +1,42 @@
+<?php
+
+
+
+/**
+ *  hook_install()
+ */
+function learning_tool_install()
+{
+
+}
+
+/**
+ * hook_schema()
+ */
+function learning_tool_schema()
+{
+    $schema['learning_tool_lti'] = array(
+        'description' => 'Store LTI 1.3 data',
+        'fields' => array(
+            'json_string' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+                'size' => 'big',
+            ),
+            'issuer' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'id' => array(
+                'type' => 'serial',
+                'not null' => TRUE,
+                'auto_increment' => TRUE,
+            ),
+        ),
+        'primary key' => array('id'),
+        'indexes' => array(
+            'issuer' => array('issuer'),
+        ),
+    );
+    return $schema;
+}
