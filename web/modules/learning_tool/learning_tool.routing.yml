@@ -1,3 +1,9 @@
+#
+#
+#
+#
+#
+
 learning_tool.launch:
   path: /learning-tool/launch
   defaults:
@@ -26,6 +32,12 @@ learning_tool.login:
   requirements:
     _permission: "access content"
 
+#
+#
+# Helpers
+#
+#
+
 learning_tool.register_moodle:
   path: /learning-tool/register/moodle
   defaults:
@@ -41,8 +53,8 @@ learning_tool.unregister_moodle:
     _permission: "access content"
 
 learning_tool.platforms:
-  path: /learning-tool/platforms
+  path: /learning-tool/db
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::list_platforms
+    _controller: Drupal\learning_tool\Controller\LearningToolController::db
   requirements:
     _permission: "access content"

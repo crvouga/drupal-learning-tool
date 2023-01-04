@@ -48,6 +48,8 @@ class LearningToolController extends ControllerBase
     // 
     // 
     // 
+    // Helpers
+    // 
     // 
     // 
     public function register_moodle() {    
@@ -69,19 +71,21 @@ class LearningToolController extends ControllerBase
         return new JsonResponse($result);
     }
 
-    public function list_platforms() {
+    public function db() {
         $database = \Drupal::service('database');
         $query = $database->query("SELECT * FROM learning_tool_platforms");
-        $results = $query->fetchAll();
-        $output = [];
-        foreach($results as $result) {
-            $output[] = json_decode($result->json_string);
-        }
+        $rows = $query->fetchAll();
+        $output = [
+            "learning_tool_platforms" => array_map(
+                function ($row) {
+                    return [ "id" => $row->id, "decoded_json_string" => json_decode($row->json_string, true)];
+                }, 
+                $rows
+            )
+        ];
         return new JsonResponse($output);
     }
 }
-
-
 
 /**
  * 
