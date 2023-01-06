@@ -12,10 +12,10 @@ use Drupal\learning_tool\Form\DeepLinkingForm;
 class LearningToolController extends ControllerBase
 {
     // TODO: don't hardcode this
-    private $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
+    private static $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
 
 
-    private $resources = [
+    private static $resources = [
         [
             "title" => "Resource A",
             "url" => "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
@@ -55,6 +55,20 @@ class LearningToolController extends ControllerBase
 
         $launch->validate();
 
+        if ($launch->is_resource_launch()) {
+            return $this->handle_resource_launch($launch);
+        }
+
+        if ($launch->is_deep_link_launch()) {
+            return $this->handle_deep_linking_launch($launch);
+        }
+
+        return [
+            '#title' => 'Unknown Launch',
+        ];
+    }
+
+    public function handle_resource_launch($launch){
         $launch_data = $launch->get_launch_data();
         $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
         $email = $launch_data['email'];
@@ -63,53 +77,35 @@ class LearningToolController extends ControllerBase
         $roles_message = implode(", ", $roles);
         $message = "Hello $given_name $family_name. Your email is ($email). Your roles are: $roles_message";
 
-        // Create an instance of the form.
-        
-        $user = [
-            'email' => $email,
-            'given_name' => $given_name,
-            'family_name' => $family_name,
-        ];
-        
-        $launch_type = get_launch_type($launch);
-        
-        
-        if($launch_type == 'deep-linking') {
-            
-            $dl = $launch->get_deep_link();
-            
-            $form_options = array_map(
-                function($resource) use ($dl) {
-                    $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
-                        ->set_url($resource['url'])
-                        ->set_custom_params($resource['custom_params'])
-                        ->set_title($resource['title']);
-
-                    $jwt = $dl->get_response_jwt([$lti_resource]);
-
-                    $resource['jwt'] = $jwt;
-
-                    return $resource;
-                }, 
-                $this->resources
-            );
-            
-            
-            $form = \Drupal::formBuilder()->getForm(DeepLinkingForm::class);
-    
-            return $form;
-        }
-
         return [
-            '#title' => 'Launch',            
-        ];  
+            '#title' => 'Resource Launch',
+            '#markup' => $message,
+        ];
     }
 
-    public function launch_deep_linking()
+    public function handle_deep_linking_launch($launch)
     {
+        $dl = $launch->get_deep_link();
+            
+        $resources = array_map(
+            function($resource) use ($dl) {
+                $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
+                    ->set_url($resource['url'])
+                    ->set_custom_params($resource['custom_params'])
+                    ->set_title($resource['title']);
+
+                $jwt = $dl->get_response_jwt([$lti_resource]);
+
+                $resource['jwt'] = $jwt;
+
+                return $resource;
+            },
+            self::$resources
+        );
+
         return array(
-            '#title' => 'Deep Linking',
-            '#markup' => 'Select some content to deep link',
+            "#theme" => "deep_linking_launch",
+            "#resources" => $resources
         );
     }
     public function keyset()
@@ -124,7 +120,7 @@ class LearningToolController extends ControllerBase
         
         $login = LTI\LTI_OIDC_Login::new($db);
         
-        $redirect = $login->do_oidc_login_redirect($this->launch_url, $_REQUEST);
+        $redirect = $login->do_oidc_login_redirect(self::$launch_url, $_REQUEST);
 
         $redirect_url = $redirect->get_redirect_url();
 
@@ -177,7 +173,7 @@ class LearningToolController extends ControllerBase
 
 function get_launch_type($launch) {
     if ($launch->is_resource_launch()) {
-        return 'launch';
+        return 'resource';
     }
 
     if ($launch->is_deep_link_launch()) {

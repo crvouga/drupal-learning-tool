@@ -1,0 +1,17 @@
+<h1>
+Deep Linking
+</h1>
+
+<p>
+This is a test of deep linking.
+</p>
+
+<h6>
+Select a resource to deep link:
+</h6>
+
+<div>
+{% for resource in resources %}
+    <a href="{{ resource.url }}">{{ resource.title }}</a>
+{% endfor %}
+</div>
