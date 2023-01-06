@@ -1,17 +1,20 @@
 <h1>
-Deep Linking
+Deep Linking Launch
 </h1>
 
-<p>
-This is a test of deep linking.
-</p>
+<h5>Deep Linking Return Url</h5>
 
-<h6>
-Select a resource to deep link:
-</h6>
+{{ deep_linking_return_url }}
 
-<div>
+<h5>Select resource to deep link:</h5>
+
+<div style="display: flex; flex-direction: column; gap: 2rem;">
 {% for resource in resources %}
-    <a href="{{ resource.url }}">{{ resource.title }}</a>
+    <form method="POST" action="{{ deep_linking_return_url }}">
+        <input name="JWT" value="{{ resource.jwt }}" />
+        <button>
+            {{ resource.title }}
+        </button>
+    </form>
 {% endfor %}
 </div>

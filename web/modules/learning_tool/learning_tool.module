@@ -8,6 +8,7 @@ function learning_tool_theme($existing, $type, $theme, $path)
     return [
         'deep_linking_launch' => [
             'variables' => [
+                "deep_linking_return_url" => null,
                 'resources' => [],
             ],
         ],

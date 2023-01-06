@@ -86,7 +86,9 @@ class LearningToolController extends ControllerBase
     public function handle_deep_linking_launch($launch)
     {
         $dl = $launch->get_deep_link();
-            
+        $launch_data = $launch->get_launch_data();
+        $deep_linking_return_url = $launch_data["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"]["deep_link_return_url"];
+
         $resources = array_map(
             function($resource) use ($dl) {
                 $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
@@ -105,6 +107,7 @@ class LearningToolController extends ControllerBase
 
         return array(
             "#theme" => "deep_linking_launch",
+            "#deep_linking_return_url" => $deep_linking_return_url,
             "#resources" => $resources
         );
     }
