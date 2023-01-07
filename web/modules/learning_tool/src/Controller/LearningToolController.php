@@ -119,10 +119,12 @@ class LearningToolController extends ControllerBase
 
         /* 
         
-        
-        TODO:
+
+        this is how ltijs implements the keyset route:
+        https://github.com/Cvmcosta/ltijs/blob/master/src/Provider/Provider.js#L91
 
         
+        TODO:        
         - somehow get a hold of the issuer
         - get the keyset from the database
         - return the keyset as a json response
