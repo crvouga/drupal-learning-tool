@@ -51,7 +51,7 @@ class LearningToolController extends ControllerBase
     // 
     public function launch()
     {
-        $launch = LTI\LTI_Message_Launch::new(new LTI_Database());
+        $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         $launch->validate();
 
@@ -91,7 +91,7 @@ class LearningToolController extends ControllerBase
 
         $resources = array_map(
             function($resource) use ($dl) {
-                $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
+                $lti_resource = LTI\LTI_Deep_Link_Resource::new()
                     ->set_url($resource['url'])
                     ->set_custom_params($resource['custom_params'])
                     ->set_title($resource['title']);
@@ -104,6 +104,9 @@ class LearningToolController extends ControllerBase
             },
             self::$resources
         );
+        
+        // fixing: A required parameter (oauth_consumer_key) was missing
+
 
         return array(
             "#theme" => "deep_linking_launch",
@@ -113,13 +116,28 @@ class LearningToolController extends ControllerBase
     }
     public function keyset()
     {
+
+        /* 
+        
+        
+        TODO:
+
+        
+        - somehow get a hold of the issuer
+        - get the keyset from the database
+        - return the keyset as a json response
+        
+        
+        
+        */
+        
         return new JsonResponse([
-            'message' => 'hello from keyset'    
+            'message' => 'hello from keyset'
         ]);
     }
     public function login()
     {
-        $db = new LTI_Database();
+        $db = LTI_Database::new();
         
         $login = LTI\LTI_OIDC_Login::new($db);
         
@@ -173,22 +191,6 @@ class LearningToolController extends ControllerBase
     }
 }
 
-
-function get_launch_type($launch) {
-    if ($launch->is_resource_launch()) {
-        return 'resource';
-    }
-
-    if ($launch->is_deep_link_launch()) {
-        return 'deep-linking';
-    }
-
-    return "unknown";
-}
-
-
-
-
 //  
 //  
 //  
@@ -223,12 +225,10 @@ class LTI_Database implements LTI\Database
         $client_id = $platform_data['client_id'];
         $key_set_url = $platform_data['key_set_url'];
         $issuer = $platform_data['issuer'];
-        
         //
-        // $kid = get_kid($key_set_url);
+        //
         // 
-        $private_key_path = __DIR__ . '/private.key';
-        $my_private_key = file_get_contents($private_key_path);
+        $tool_private_key = read_private_key();
 
         return LTI\LTI_Registration::new ()
             ->set_auth_login_url($auth_login_url)
@@ -236,7 +236,7 @@ class LTI_Database implements LTI\Database
             ->set_client_id($client_id)
             ->set_key_set_url($key_set_url)
             ->set_issuer($issuer)
-            ->set_tool_private_key($my_private_key);
+            ->set_tool_private_key($tool_private_key);
     }
     public function find_deployment($iss, $deployment_id) {
         return LTI\LTI_Deployment::new ()->set_deployment_id($deployment_id);
@@ -250,7 +250,10 @@ class LTI_Database implements LTI\Database
     // 
     // 
 
-
+    public static function new()
+    {
+        return new LTI_Database();
+    }
     public static function register_platform($input)
     {
         $required_keys = [
@@ -296,6 +299,13 @@ class LTI_Database implements LTI\Database
 }
 
 
+function read_private_key()
+{
+    $private_key_path = __DIR__ . '/private.key';
+    $my_private_key = file_get_contents($private_key_path);
+    return $my_private_key;
+}
+
 // 
 // 
 // 
@@ -303,8 +313,6 @@ class LTI_Database implements LTI\Database
 // 
 // 
 // 
-
-
 
 function ok($data)
 {

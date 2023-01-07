@@ -1,20 +1,33 @@
-<h1>
-Deep Linking Launch
-</h1>
+<div style="padding: 3rem;">
+    <h1>
+        Deep Linking Launch
+    </h1>
 
-<h5>Deep Linking Return Url</h5>
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+        <div>
+            <h4>Deep Linking Return Url</h4>
+            <pre>
+                {{ deep_linking_return_url }}
+            </pre>
+        </div>
 
-{{ deep_linking_return_url }}
+        <div>
+            <h4>Select resource to deep link:</h4>
 
-<h5>Select resource to deep link:</h5>
-
-<div style="display: flex; flex-direction: column; gap: 2rem;">
-{% for resource in resources %}
-    <form method="POST" action="{{ deep_linking_return_url }}">
-        <input name="JWT" value="{{ resource.jwt }}" />
-        <button>
-            {{ resource.title }}
-        </button>
-    </form>
-{% endfor %}
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+            {% for resource in resources %}
+                <form method="POST" action="{{ deep_linking_return_url }}" style="display: flex; align-items: center;">
+                    <pre>
+                        {{ resource.jwt }}
+                    </pre>
+                    {# note to self. <input disabled ... /> will not include the input value in the form #}
+                    <input type="hidden" name="JWT" value="{{ resource.jwt }}" />
+                    <button type="submit">
+                        {{ resource.title }}
+                    </button>
+                </form>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
