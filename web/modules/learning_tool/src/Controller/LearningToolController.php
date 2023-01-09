@@ -4,7 +4,7 @@ namespace Drupal\learning_tool\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
-use Drupal\learning_tool\GradeAssignmentForm\GradeAssignmentForm;
+use Drupal\learning_tool\Form\AssignmentForm;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -53,7 +53,8 @@ class LearningToolController extends ControllerBase
         $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
         $custom_message = $custom['message'];
 
-        // $form = \Drupal::formBuilder()->getForm("Drupal\learning_tool\GradeAssignmentForm\GradeAssignmentForm");
+        $form_instance = new AssignmentForm();
+        $form = \Drupal::formBuilder()->getForm($form_instance);
 
         return array(
             "#theme" => "resource_launch",
@@ -61,11 +62,9 @@ class LearningToolController extends ControllerBase
             "#email" => $email,
             "#name" => "$given_name $family_name",
             "#custom_message" => $custom_message,
-            // "#form" => $form,
+            "#form" => $form,
         );
     }
-
-    
 
     public function handle_deep_linking_launch(LTI\LTI_Message_Launch $launch)
     {

@@ -1,18 +1,18 @@
 <?php
 
-namespace Drupal\learning_tool\GradeAssignmentForm;
+namespace Drupal\learning_tool\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class GradeAssignmentForm extends FormBase
+class AssignmentForm extends FormBase
 {
     public function getFormId()
     {
-        return 'custom_form';
+        return 'assignment_form';
     }
 
-    public function buildForm(array $form, FormStateInterface $form_state, $deep_linking_resources = [])
+    public function buildForm(array $form, FormStateInterface $form_state)
     {
         $form['name'] = [
             '#type' => 'textfield',

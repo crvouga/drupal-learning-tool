@@ -18,6 +18,7 @@ function learning_tool_theme($existing, $type, $theme, $path)
                 "email" => null,
                 "name" => null,
                 "custom_message" => null,
+                "form" => null,
             ],
         ],
     ];
