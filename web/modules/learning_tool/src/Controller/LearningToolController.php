@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 
 class LearningToolController extends ControllerBase
@@ -47,15 +48,19 @@ class LearningToolController extends ControllerBase
         $given_name = $launch_data['given_name'];
         $family_name = $launch_data['family_name'];
         $roles_message = implode(", ", $roles);
-        $message = "Hello $given_name $family_name. Your email is ($email). Your roles are: $roles_message";
+
+        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
+        $custom_message = $custom['message'];
+
+        $message = "Hello $given_name $family_name. Your email is: $email. Your roles are: $roles_message";
 
         return [
-            '#title' => 'Resource Launch',
+            '#title' => $custom_message,
             '#markup' => $message,
         ];
     }
 
-    public function handle_deep_linking_launch($launch)
+    public function handle_deep_linking_launch(LTI\LTI_Message_Launch $launch)
     {
         $dl = $launch->get_deep_link();
         $launch_data = $launch->get_launch_data();
@@ -78,8 +83,15 @@ class LearningToolController extends ControllerBase
             },
             $sample_resources
         );
-        
-        // fixing: A required parameter (oauth_consumer_key) was missing
+
+        // 
+        // TODO: somehow set launch_id in session.
+        // I think there is a problem with the session cookie not being set properly
+        // because the app is running inside of a iframe.
+        // 
+        // $launch_id = $launch->get_launch_id();
+        // $_SESSION['launch_id'] = $launch_id;
+        // 
 
         return array(
             "#theme" => "deep_linking_launch",
@@ -87,28 +99,27 @@ class LearningToolController extends ControllerBase
             "#resources" => $resources
         );
     }
-    public function keyset()
+    public function keyset(Request $request)
     {
+           
+        // 
+        // TODO: somehow get launch_id from session
+        // 
+        // $launch_id = $_SESSION['launch_id'];
+        // 
+        // WHY? we can get the issuer from the launch_id
+        // 
 
-        /* 
-        
+        // NOTICE: this is a hack. The LMS has to send it's issuer id
+        $issuer = $request->query->get('issuer');
 
-        this is how ltijs implements the keyset route:
-        https://github.com/Cvmcosta/ltijs/blob/master/src/Provider/Provider.js#L91
+        if(!$issuer) {
+            $response = new JsonResponse(err("issuer must be provided"));
+            $response->setStatusCode(400);
+            return $response;
+        }
 
-        
-        TODO:        
-        - somehow get a hold of the issuer
-        - get the keyset from the database
-        - return the keyset as a json response
-        
-        
-        
-        */
-
-        $issuer = "";
-
-        $public_jwks = LTI\JWKS_Endpoint::from_issuer(LTI_Database::new (), $issuer)->get_public_jwks();
+        $public_jwks = LTI\JWKS_Endpoint::from_issuer(LTI_Database::new(), $issuer)->get_public_jwks();
         
         return new JsonResponse($public_jwks);
     }
