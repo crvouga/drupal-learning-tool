@@ -1,0 +1,40 @@
+<div style="padding: 3rem;">
+    <h1>
+        Resource Launch
+    </h1>
+
+    <h2>
+        {{custom_message}}
+    </h2>
+
+    <p>
+        Hello {{name}}. Your email is: {{email}}
+    </p>
+    
+    <div>
+        {% for role in roles %}
+            <div>
+                {{role}}
+            </div>
+        {% endfor %}
+    </div>
+
+    <h1>
+        Assignment
+    </h1>
+
+    <form method="POST" action="{{ grade_assignment_url }}">
+        <select name="choice">
+            <option value="correct">
+                Correct
+            </option>
+            <option value="half-correct">
+                Half Correct
+            </option>
+            <option value="wrong">
+                Wrong
+            </option>
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+</div>

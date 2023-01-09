@@ -12,5 +12,13 @@ function learning_tool_theme($existing, $type, $theme, $path)
                 'resources' => [],
             ],
         ],
+        'resource_launch' => [
+            'variables' => [
+                "roles" => [],
+                "email" => null,
+                "name" => null,
+                "custom_message" => null,
+            ],
+        ],
     ];
 }

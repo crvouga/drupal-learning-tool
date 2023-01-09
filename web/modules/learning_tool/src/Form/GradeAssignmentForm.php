@@ -1,11 +1,11 @@
 <?php
 
-namespace Drupal\learning_tool\Form;
+namespace Drupal\learning_tool\GradeAssignmentForm;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class DeepLinkingForm extends FormBase
+class GradeAssignmentForm extends FormBase
 {
     public function getFormId()
     {

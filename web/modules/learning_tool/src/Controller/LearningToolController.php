@@ -4,6 +4,7 @@ namespace Drupal\learning_tool\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
+use Drupal\learning_tool\GradeAssignmentForm\GradeAssignmentForm;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,22 +44,28 @@ class LearningToolController extends ControllerBase
 
     public function handle_resource_launch($launch){
         $launch_data = $launch->get_launch_data();
+        // 
         $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
         $email = $launch_data['email'];
         $given_name = $launch_data['given_name'];
         $family_name = $launch_data['family_name'];
-        $roles_message = implode(", ", $roles);
-
+        // 
         $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
         $custom_message = $custom['message'];
 
-        $message = "Hello $given_name $family_name. Your email is: $email. Your roles are: $roles_message";
+        // $form = \Drupal::formBuilder()->getForm("Drupal\learning_tool\GradeAssignmentForm\GradeAssignmentForm");
 
-        return [
-            '#title' => $custom_message,
-            '#markup' => $message,
-        ];
+        return array(
+            "#theme" => "resource_launch",
+            "#roles" => $roles,
+            "#email" => $email,
+            "#name" => "$given_name $family_name",
+            "#custom_message" => $custom_message,
+            // "#form" => $form,
+        );
     }
+
+    
 
     public function handle_deep_linking_launch(LTI\LTI_Message_Launch $launch)
     {
