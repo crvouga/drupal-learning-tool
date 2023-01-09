@@ -6,7 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Drupal\learning_tool\Form\DeepLinkingForm;
 
 
 class LearningToolController extends ControllerBase
@@ -14,33 +13,6 @@ class LearningToolController extends ControllerBase
     // TODO: don't hardcode this
     private static $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
 
-
-    private static $resources = [
-        [
-            "title" => "Resource A",
-            "url" => "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-            "custom_params" => [
-                "a1" => "a2",
-                "a2" => "a2",
-            ],
-        ],
-        [
-            "title" => "Resource B",
-            "url" => "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-            "custom_params" => [
-                "b1" => "b2",
-                "b2" => "b2",
-            ],
-        ],
-        [
-            "title" => "Resource C",
-            "url" => "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-            "custom_params" => [
-                "c1" => "c2",
-                "c2" => "c2",
-            ],
-        ],
-    ];    
 
     // 
     // 
@@ -89,6 +61,8 @@ class LearningToolController extends ControllerBase
         $launch_data = $launch->get_launch_data();
         $deep_linking_return_url = $launch_data["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"]["deep_link_return_url"];
 
+        $sample_resources = json_decode(file_get_contents(__DIR__ . '/sample-resources.json'),  true);
+        
         $resources = array_map(
             function($resource) use ($dl) {
                 $lti_resource = LTI\LTI_Deep_Link_Resource::new()
@@ -102,11 +76,10 @@ class LearningToolController extends ControllerBase
 
                 return $resource;
             },
-            self::$resources
+            $sample_resources
         );
         
         // fixing: A required parameter (oauth_consumer_key) was missing
-
 
         return array(
             "#theme" => "deep_linking_launch",
@@ -132,10 +105,12 @@ class LearningToolController extends ControllerBase
         
         
         */
+
+        $issuer = "";
+
+        $public_jwks = LTI\JWKS_Endpoint::from_issuer(LTI_Database::new (), $issuer)->get_public_jwks();
         
-        return new JsonResponse([
-            'message' => 'hello from keyset'
-        ]);
+        return new JsonResponse($public_jwks);
     }
     public function login()
     {
@@ -213,7 +188,7 @@ class LTI_Database implements LTI\Database
     // 
     // 
     // 
-    // Required by LTI\Database
+    // Required by LTI\Database Interface
     // 
     // 
     // 
@@ -362,30 +337,10 @@ function ok($data)
     return ["type" => "ok", "data" => $data];
 }
 
-function is_ok($result)
-{
-    return $result["type"] == "err";
-}
-
 function err($err)
 {
     return ["type" => "err", "err" => $err];
 }
-
-function is_err($result)
-{
-    return $result["type"] == "err";
-}
-
-function attempt($fn)
-{
-    // try {
-    //     return ok($fn());
-    // } catch (mixed $e) {
-    //     return err($e->getMessage());
-    // }
-}
-
 function has_keys($input, $required_keys)
 {
     $inputKeys = array_keys($input);

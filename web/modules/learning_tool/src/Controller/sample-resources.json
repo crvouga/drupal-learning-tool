@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Resource A",
+    "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
+    "custom_params": {
+      "a1": "a2",
+      "a2": "a2"
+    }
+  },
+  {
+    "title": "Resource B",
+    "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
+    "custom_params": {
+      "b1": "b2",
+      "b2": "b2"
+    }
+  },
+  {
+    "title": "Resource C",
+    "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
+    "custom_params": {
+      "c1": "c2",
+      "c2": "c2"
+    }
+  }
+]
