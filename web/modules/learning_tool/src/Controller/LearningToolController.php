@@ -204,6 +204,8 @@ class LearningToolController extends ControllerBase
 class LTI_Database implements LTI\Database
 {
 
+    public static $table_name = 'learning_tool_platforms';
+
     // 
     // 
     // 
@@ -211,9 +213,10 @@ class LTI_Database implements LTI\Database
     // 
     // 
     // 
-    public function find_registration_by_issuer($iss) {
+    public function find_registration_by_issuer($issuer) {
         $database = \Drupal::service('database');
-        $query = $database->query("SELECT * FROM learning_tool_platforms WHERE issuer = :issuer", [':issuer' => $iss]);
+        $table_name = self::$table_name;
+        $query = $database->query("SELECT * FROM $table_name WHERE issuer = $issuer");
         $results = $query->fetchAll();
 
         if (count($results) == 0) {
@@ -256,6 +259,7 @@ class LTI_Database implements LTI\Database
     {
         return new LTI_Database();
     }
+
     public static function register_platform($input)
     {
         $required_keys = [
@@ -271,12 +275,21 @@ class LTI_Database implements LTI\Database
             return err("missing required keys");
         }
 
+        $found = self::find_many_by_issuer($input['issuer']);
+
+        if(count($found) > 0) {
+            return err("platform already registered");
+        }
+
         $fields = [
             "issuer" => $input['issuer'],
             "json_string" => json_encode($input),
         ];
-
-        \Drupal::service('database')->insert('learning_tool_platforms')->fields($fields)->execute();
+        
+        \Drupal::database()
+            ->insert(self::$table_name)
+            ->fields($fields)
+            ->execute();
 
         return ok("registered platform");
     }
@@ -291,10 +304,37 @@ class LTI_Database implements LTI\Database
         if (!has_keys($input, $required_keys)) {
             return err("missing required keys");
         }
+        
+        $issuer = $input['issuer'];
 
-        \Drupal::service('database')->delete('learning_tool_platforms')->condition('issuer', $input['issuer'])->execute();
+        $found = self::find_many_by_issuer($issuer);
+
+        if(count($found) == 0) {
+            return err("platform not registered");
+        }
+
+        $connection = \Drupal::service('database');
+        $table_name = self::$table_name;
+        $query = $connection->query("DELETE FROM $table_name WHERE issuer = '$issuer'");
+        $query->execute();
 
         return ok("unregistered platform");
+    }
+
+    // 
+    // 
+    // 
+    // 
+    // 
+    // 
+
+    private static function find_many_by_issuer($issuer)
+    {
+        $database = \Drupal::service('database');
+        $table_name = self::$table_name;
+        $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer'");
+        $found = $query->fetchAll();
+        return $found;
     }
 
 
