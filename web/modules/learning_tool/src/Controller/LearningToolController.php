@@ -158,23 +158,27 @@ class LearningToolController extends ControllerBase
     // 
     // 
 
-    public function register_moodle() {    
-        $result = LTI_Database::register_platform([
-            "name" => "Moodle",
-            "issuer" => "http://localhost:8888/moodle",
-            "client_id" => "s6KjUEZZsAQfTWy",
-            "auth_login_url" => "http://localhost:8888/moodle/mod/lti/auth.php",
-            "auth_token_url" => "http://localhost:8888/moodle/mod/lti/token.php",
-            "key_set_url" => "http://localhost:8888/moodle/mod/lti/certs.php",
-        ]);
+    private static function unregister_platform($issuer) {
+        $result = LTI_Database::unregister_platform(["issuer" => $issuer]);
         return new JsonResponse($result);
     }
-
-    public function unregister_moodle() {
-        $result = LTI_Database::unregister_platform([
-            "issuer"=> "http://localhost:8888/moodle"
-        ]);
+    private static function register_platform($issuer)
+    {
+        $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
+        $moodle_config = $platform_configs[$issuer];
+        if (!$moodle_config) {
+            return new JsonResponse(err("no config for $issuer"));
+        }
+        $result = LTI_Database::register_platform($moodle_config);
         return new JsonResponse($result);
+    } 
+    
+    public function register_moodle() {
+        return self::register_platform("http://localhost:8888/moodle");
+    }
+    
+    public function unregister_moodle() {
+        return self::unregister_platform("http://localhost:8888/moodle");
     }
 
     public function db() {
@@ -214,16 +218,13 @@ class LTI_Database implements LTI\Database
     // 
     // 
     public function find_registration_by_issuer($issuer) {
-        $database = \Drupal::service('database');
-        $table_name = self::$table_name;
-        $query = $database->query("SELECT * FROM $table_name WHERE issuer = $issuer");
-        $results = $query->fetchAll();
+        $found = self::find_many_platforms_by_issuer($issuer);
 
-        if (count($results) == 0) {
+        if (count($found) == 0) {
             return false;
         }
 
-        $platform_data = json_decode($results[0]->json_string, true);
+        $platform_data = json_decode($found[0]->json_string, true);
 
         $auth_login_url = $platform_data['auth_login_url'];
         $auth_token_url = $platform_data['auth_token_url'];
@@ -275,7 +276,7 @@ class LTI_Database implements LTI\Database
             return err("missing required keys");
         }
 
-        $found = self::find_many_by_issuer($input['issuer']);
+        $found = self::find_many_platforms_by_issuer($input['issuer']);
 
         if(count($found) > 0) {
             return err("platform already registered");
@@ -304,10 +305,10 @@ class LTI_Database implements LTI\Database
         if (!has_keys($input, $required_keys)) {
             return err("missing required keys");
         }
-        
+
         $issuer = $input['issuer'];
 
-        $found = self::find_many_by_issuer($issuer);
+        $found = self::find_many_platforms_by_issuer($issuer);
 
         if(count($found) == 0) {
             return err("platform not registered");
@@ -328,7 +329,7 @@ class LTI_Database implements LTI\Database
     // 
     // 
 
-    private static function find_many_by_issuer($issuer)
+    private static function find_many_platforms_by_issuer($issuer)
     {
         $database = \Drupal::service('database');
         $table_name = self::$table_name;

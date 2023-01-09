@@ -1,0 +1,10 @@
+{
+  "http://localhost:8888/moodle": {
+    "name": "Moodle",
+    "issuer": "http://localhost:8888/moodle",
+    "client_id": "s6KjUEZZsAQfTWy",
+    "auth_login_url": "http://localhost:8888/moodle/mod/lti/auth.php",
+    "auth_token_url": "http://localhost:8888/moodle/mod/lti/token.php",
+    "key_set_url": "http://localhost:8888/moodle/mod/lti/certs.php"
+  }
+}
