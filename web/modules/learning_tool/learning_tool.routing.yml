@@ -25,6 +25,13 @@ learning_tool.login:
   requirements:
     _permission: "access content"
 
+learning_tool.grade:
+  path: /learning-tool/grade
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::grade
+  requirements:
+    _permission: "access content"
+
 #
 #
 # Helpers

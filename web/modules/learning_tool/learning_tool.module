@@ -6,20 +6,23 @@
 function learning_tool_theme($existing, $type, $theme, $path)
 {
     return [
-        'deep_linking_launch' => [
+        'launch_deep_linking' => [
             'variables' => [
                 "deep_linking_return_url" => null,
                 'resources' => [],
             ],
         ],
-        'resource_launch' => [
+        'launch_resource' => [
             'variables' => [
+                // 
                 "roles" => [],
                 "email" => null,
                 "name" => null,
-                "custom_message" => null,
-                "grade_assignment_url" => null,
-                'form' => NULL
+                // 
+                "resource" => null,
+                // 
+                "launch_id" => null,
+                "grade_action" => null,
             ],
         ],
     ];

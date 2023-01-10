@@ -18,24 +18,28 @@ class LearningToolController extends ControllerBase
     // 
     // 
     // LTI Routes 
+    // docs: https://github.com/1EdTech/lti-1-3-php-library
     // 
     // 
     public function launch()
     {
-        // if($_SERVER["REQUEST_METHOD"] == 'POST') {
-        //     return $this->handle_launch_post();
-        // }
-
+        
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         $launch->validate();
 
         if ($launch->is_resource_launch()) {
-            return $this->handle_resource_launch($launch);
+            return $this->launch_resource($launch);
         }
 
         if ($launch->is_deep_link_launch()) {
-            return $this->handle_deep_linking_launch($launch);
+            return $this->launch_deep_linking($launch);
+        }
+
+        if($launch->is_submission_review_launch()) {
+            return [
+                '#title' => 'Submission review launch',
+            ];
         }
 
         return [
@@ -43,7 +47,7 @@ class LearningToolController extends ControllerBase
         ];
     }
 
-    public function handle_resource_launch($launch){
+    private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
         // 
         $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
@@ -52,36 +56,61 @@ class LearningToolController extends ControllerBase
         $family_name = $launch_data['family_name'];
         // 
         $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
-        $custom_message = $custom['message'];
+        $resource_id = $custom['id'];
 
-        $form_instance = new AssignmentForm();
+        $resource = self::get_one_resource_by_id($resource_id);
 
-        $form = \Drupal::formBuilder()->getForm($form_instance);
+        if(!$resource) {
+            return [
+                '#title' => 'Resource not found',
+            ];
+        }
+
+        $launch_id = $launch->get_launch_id();
 
         return array(
-            "#theme" => "resource_launch",
+            "#theme" => "launch_resource",
             "#roles" => $roles,
             "#email" => $email,
             "#name" => "$given_name $family_name",
-            "#custom_message" => $custom_message,
-            "#grade_assignment_url" => "",
-            "#form" => $form,
+            // 
+            "#resource" => $resource,
+            "#grade_action" => "/learning-tool/grade",
+            "#launch_id" => $launch_id,
         );
     }
 
-    public function handle_deep_linking_launch(LTI\LTI_Message_Launch $launch)
+    private static function get_all_resources()
+    {
+        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
+    }
+
+    private static function get_one_resource_by_id($resource_id) 
+    {
+        $resources = self::get_all_resources();
+
+        foreach ($resources as $resource) {
+            if ($resource['id'] == $resource_id) {
+                return $resource;
+            }
+        }
+
+        return false;
+    }
+
+    
+
+    private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
         $dl = $launch->get_deep_link();
         $launch_data = $launch->get_launch_data();
         $deep_linking_return_url = $launch_data["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"]["deep_link_return_url"];
 
-        $sample_resources = json_decode(file_get_contents(__DIR__ . '/sample-resources.json'),  true);
-        
         $resources = array_map(
             function($resource) use ($dl) {
                 $lti_resource = LTI\LTI_Deep_Link_Resource::new()
                     ->set_url($resource['url'])
-                    ->set_custom_params($resource['custom_params'])
+                    ->set_custom_params($resource)
                     ->set_title($resource['title']);
 
                 $jwt = $dl->get_response_jwt([$lti_resource]);
@@ -90,7 +119,7 @@ class LearningToolController extends ControllerBase
 
                 return $resource;
             },
-            $sample_resources
+            self::get_all_resources()
         );
 
         // 
@@ -103,11 +132,25 @@ class LearningToolController extends ControllerBase
         // 
 
         return array(
-            "#theme" => "deep_linking_launch",
+            "#theme" => "launch_deep_linking",
             "#deep_linking_return_url" => $deep_linking_return_url,
             "#resources" => $resources
         );
     }
+
+        private function grade() {
+        $form_values = $_POST;
+        $grade = $form_values['choice'];
+        $launch_id = $form_values['launch_id'];
+        $launch = LTI\LTI_Message_Launch::from_cache($launch_id,LTI_Database::new());
+
+        if(!$launch->has_gs()) {
+            return [
+                "#title" => "Error. Grade service not available"
+            ];
+        }
+    }
+
 
     // 
     // 

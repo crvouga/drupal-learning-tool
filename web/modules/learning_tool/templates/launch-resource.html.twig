@@ -1,0 +1,56 @@
+<div style="padding: 3rem;">
+
+    <h1>
+        Resource Launch
+    </h1>
+
+    {# 
+    
+    
+     #}
+
+    <h2>
+        LMS Data
+    </h2>
+
+    <p>
+        Hello {{name}}. Your email is: {{email}}
+    </p>
+
+    <h3>
+        Roles
+    </h3>
+    
+    <div>
+        {% for role in roles %}
+            <div>
+                {{role}}
+            </div>
+        {% endfor %}
+    </div>
+
+    {# 
+    
+    
+     #}
+
+    <h2>
+        Resource Specific Data
+    </h2>
+
+    <h2>
+        {{resource.question}}
+    </h2>
+
+    <form method="POST" action="{{ grade_url }}">
+        <input type="hidden" name="launch_id" value="{{ launch_id }}" />
+
+        <select name="grade">
+            {% for choice in resource.choices %}
+                <option value="{{choice}}">{{choice}}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Submit</button>
+    </form>
+</div>

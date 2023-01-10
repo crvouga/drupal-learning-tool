@@ -1,29 +1,26 @@
 [
   {
+    "id": "1",
     "title": "Resource A",
     "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-    "custom_params": {
-      "a1": "a2",
-      "a2": "a2",
-      "message": "Hello from resource A"
-    }
+    "question": "1 + 2 = ?",
+    "answer": "3",
+    "choices": ["12", "2", "3"]
   },
   {
+    "id": "2",
     "title": "Resource B",
     "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-    "custom_params": {
-      "b1": "b2",
-      "b2": "b2",
-      "message": "Hello from resource B"
-    }
+    "question": "2 + 1 = ?",
+    "answer": "3",
+    "choices": ["21", "2", "3"]
   },
   {
+    "id": "3",
     "title": "Resource C",
     "url": "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch",
-    "custom_params": {
-      "c1": "c2",
-      "c2": "c2",
-      "message": "Hello from resource C"
-    }
+    "question": "2 x 1 = ?",
+    "answer": "2",
+    "choices": ["21", "2", "3"]
   }
 ]

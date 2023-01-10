@@ -6,9 +6,9 @@
     <div style="display: flex; flex-direction: column; gap: 3rem;">
         <div>
             <h4>Deep Linking Return Url</h4>
-            <pre>
+            <p>
                 {{ deep_linking_return_url }}
-            </pre>
+            </p>
         </div>
 
         <div>
@@ -20,7 +20,7 @@
                     {# note to self. <input disabled ... /> will not include the input value in the form #}
                     <input type="hidden" name="JWT" value="{{ resource.jwt }}" />
                     <button type="submit" style="width: 100%; padding: 1rem;">
-                        {{ resource.title }}
+                        {{ resource.title }} ({{ resource.custom_params.question }})
                     </button>
                 </form>
             {% endfor %}
