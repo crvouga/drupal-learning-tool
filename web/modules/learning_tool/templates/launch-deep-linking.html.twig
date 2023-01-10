@@ -20,7 +20,7 @@
                     {# note to self. <input disabled ... /> will not include the input value in the form #}
                     <input type="hidden" name="JWT" value="{{ resource.jwt }}" />
                     <button type="submit" style="width: 100%; padding: 1rem;">
-                        {{ resource.title }} ({{ resource.custom_params.question }})
+                        {{ resource.title }} ({{ resource.question }})
                     </button>
                 </form>
             {% endfor %}
