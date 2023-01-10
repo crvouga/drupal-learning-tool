@@ -15,16 +15,17 @@ class LearningToolController extends ControllerBase
     // TODO: don't hardcode this
     private static $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
 
-
-    // 
     // 
     // 
     // LTI Routes 
     // 
     // 
-    // 
     public function launch()
     {
+        // if($_SERVER["REQUEST_METHOD"] == 'POST') {
+        //     return $this->handle_launch_post();
+        // }
+
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         $launch->validate();
@@ -54,6 +55,7 @@ class LearningToolController extends ControllerBase
         $custom_message = $custom['message'];
 
         $form_instance = new AssignmentForm();
+
         $form = \Drupal::formBuilder()->getForm($form_instance);
 
         return array(
@@ -62,6 +64,7 @@ class LearningToolController extends ControllerBase
             "#email" => $email,
             "#name" => "$given_name $family_name",
             "#custom_message" => $custom_message,
+            "#grade_assignment_url" => "",
             "#form" => $form,
         );
     }
@@ -105,6 +108,13 @@ class LearningToolController extends ControllerBase
             "#resources" => $resources
         );
     }
+
+    // 
+    // 
+    // 
+    // 
+    // 
+
     public function keyset(Request $request)
     {
            
@@ -115,7 +125,6 @@ class LearningToolController extends ControllerBase
         // 
         // WHY? we can get the issuer from the launch_id
         // 
-
         // NOTICE: this is a hack. The LMS has to send it's issuer id
         $issuer = $request->query->get('issuer');
 
@@ -129,6 +138,13 @@ class LearningToolController extends ControllerBase
         
         return new JsonResponse($public_jwks);
     }
+
+    // 
+    // 
+    // 
+    // 
+    // 
+    
     public function login()
     {
         $db = LTI_Database::new();

@@ -3,6 +3,7 @@
 namespace Drupal\learning_tool\Form;
 
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 
 class AssignmentForm extends FormBase
@@ -11,22 +12,15 @@ class AssignmentForm extends FormBase
     {
         return 'assignment_form';
     }
-
     public function buildForm(array $form, FormStateInterface $form_state)
     {
-        $form['name'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Name'),
-            '#required' => TRUE,
-        ];
-
-        $form['color'] = [
+        $form['answer'] = [
             '#type' => 'select',
-            '#title' => $this->t('Color'),
+            '#title' => $this->t('Answer'),
             '#options' => [
-                'red' => $this->t('Red'),
-                'green' => $this->t('Green'),
-                'blue' => $this->t('Blue'),
+                'red' => $this->t('Correct'),
+                'green' => $this->t('Partially Correct'),
+                'blue' => $this->t('Wrong'),
             ],
         ];
 
@@ -46,6 +40,7 @@ class AssignmentForm extends FormBase
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
         // Handle form submission.
+
     }
 
 }

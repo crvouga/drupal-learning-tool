@@ -19,24 +19,9 @@
         {% endfor %}
     </div>
 
-    <h1>
-        Assignment
-    </h1>
+    <h2>
+        Assignment Form
+    </h2>
 
-    {# {{ form }} #}
-
-    <form method="POST" action="{{ grade_assignment_url }}">
-        <select name="choice">
-            <option value="correct">
-                Correct
-            </option>
-            <option value="half-correct">
-                Half Correct
-            </option>
-            <option value="wrong">
-                Wrong
-            </option>
-        </select>
-        <button type="submit">Submit</button>
-    </form>
+    {{ form }}
 </div>
