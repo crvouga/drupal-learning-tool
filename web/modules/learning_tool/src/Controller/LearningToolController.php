@@ -13,6 +13,19 @@ use Symfony\Component\HttpFoundation\Request;
 class LearningToolController extends ControllerBase
 {
     
+
+    private $launch_url = "";
+
+    // constructor
+    public function __construct()
+    {
+        // 
+        $url = Url::fromRoute('learning_tool.launch', []);
+        $url->setAbsolute(true);
+        $this->launch_url = $url->toString();
+    }
+
+
     // 
     // 
     // LTI Routes 
@@ -246,17 +259,12 @@ class LearningToolController extends ControllerBase
         
         $login = LTI\LTI_OIDC_Login::new($db);
 
-        // $url = Url::fromRoute('learning_tool.launch', []);
-        // $url->setAbsolute(true);
-        // $launch_url = $url->toString();
-        $launch_url_hardcoded = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
-        $redirect = $login->do_oidc_login_redirect($launch_url_hardcoded);
-
+        $redirect = $login->do_oidc_login_redirect($this->launch_url);
+    
         $redirect_url = $redirect->get_redirect_url();
-        
-
+    
         $trusted_redirect = new TrustedRedirectResponse($redirect_url);
-        
+
         return $trusted_redirect;
     }
 
