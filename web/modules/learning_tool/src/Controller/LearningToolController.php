@@ -8,6 +8,7 @@ use Drupal\Core\Url;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Constraints\DateTime;
 
 
 class LearningToolController extends ControllerBase
@@ -63,25 +64,19 @@ class LearningToolController extends ControllerBase
             ];
         }
 
+        // TODO: check if assignment is completed
         
-        $scope = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["scope"];
-        $endpoint = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["lineitem"];
-        $db = LTI_Database::new();
-        $registration = $db->find_registration_by_issuer($launch_data["iss"]);
-        if(!$registration) {
-            return [ "#title" => "Error. Registration not found"];
-        }
-        $service_connector = new LTI\LTI_Service_Connector($registration);
-        
-        // $ags = $launch->get_ags();
-        $result = $service_connector->make_service_request($scope, "GET", $endpoint);
-        $line_item = new LTI\LTI_Lineitem($result['body']);
-        
-
-
-
-
-
+        // $scope = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["scope"];
+        // $endpoint = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["lineitem"];
+        // $db = LTI_Database::new();
+        // $registration = $db->find_registration_by_issuer($launch_data["iss"]);
+        // if(!$registration) {
+        //     return [ "#title" => "Error. Registration not found"];
+        // }
+        // $service_connector = new LTI\LTI_Service_Connector($registration);
+        // // $ags = $launch->get_ags();
+        // $result = $service_connector->make_service_request($scope, "GET", $endpoint);
+        // $line_item = new LTI\LTI_Lineitem($result['body']);
         // $ags->get_grades();
 
 
@@ -200,14 +195,19 @@ class LearningToolController extends ControllerBase
         }
 
         $score_maximum = 1;
-        $score = $choice == $resource["answer"] ? 1 : 0;
+        $score_given = $choice == $resource["answer"] ? 1 : 0;
 
-        $grade = LTI\LTI_Grade::new()
-            ->set_score_given($score)
-            ->set_score_maximum($score_maximum)
+
+        $external_user_id = $launch->get_launch_data()["sub"];
+
+        $grade = LTI\LTI_Grade::new ()
+            ->set_score_given($score_given)
+            ->set_score_maximum($score_maximum )
             ->set_activity_progress("Completed")
             ->set_grading_progress("FullyGraded")
-            ->set_timestamp(date(DATE_ATOM));
+            ->set_timestamp(date("c"))
+            ->set_user_id($external_user_id);
+
 
         if(!$launch->has_ags()) 
         {
@@ -218,10 +218,11 @@ class LearningToolController extends ControllerBase
 
         $ags = $launch->get_ags();
 
-        $ags->put_grade($grade);
+        $result = $ags->put_grade($grade);
 
         return [
-            "#title" => "Grade submitted"
+            "#title" => "Grade submitted",
+            "#markup" => json_encode($result)
         ];
     }
 

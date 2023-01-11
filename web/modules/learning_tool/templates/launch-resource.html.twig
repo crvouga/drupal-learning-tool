@@ -42,7 +42,7 @@
         {{resource.question}}
     </h2>
 
-    <form method="POST" action="{{ grade_action }}">
+    <form method="POST" action="{{ grade_action }}?XDEBUG_SESSION_START=xdebug">
         <input type="hidden" name="launch_id" value="{{ launch_id }}" />
 
         <select name="choice">
