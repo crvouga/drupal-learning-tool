@@ -11,6 +11,13 @@ learning_tool.launch:
   requirements:
     _permission: "access content"
 
+learning_tool.launch-deep-linking:
+  path: /learning-tool/launch-deep-linking
+  defaults:
+    _form: Drupal\learning_tool\Form\DeepLinkingForm
+  requirements:
+    _permission: "access content"
+
 learning_tool.keyset:
   path: /learning-tool/keyset
   defaults:
