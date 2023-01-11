@@ -176,8 +176,8 @@ class LearningToolController extends ControllerBase
             ];
         }
 
-        $score_maximum = 1;
-        $score_given = $choice == $resource["answer"] ? 1 : 0;
+        $score_maximum = 100;
+        $score_given = $choice == $resource["answer"] ? 100 : 1;
 
 
         $external_user_id = $launch->get_launch_data()["sub"];
@@ -204,9 +204,13 @@ class LearningToolController extends ControllerBase
         // https://github.com/cengage/moodle-ltiservice_gradebookservices/blob/f223ca8493c7a8b181818a77d6419f76d7901c52/classes/local/resources/scores.php#L195
         $result = $ags->put_grade($grade);
 
+
+        $success_title = "$score_given / $score_maximum is your score.";
+        
+        $title = str_contains($result["headers"][0], "200") ? $success_title : "Error - Sent over an invalid grade";
+
         return [
-            "#title" => "Grade submitted",
-            "#markup" => json_encode($result)
+            "#title" => $title,
         ];
     }
 
@@ -245,15 +249,18 @@ class LearningToolController extends ControllerBase
         
         $login = LTI\LTI_OIDC_Login::new($db);
 
-        $url = Url::fromRoute('learning_tool.launch', []);
-        $url->setAbsolute(true);
-        $launch_url = $url->toString();
-
-        $redirect = $login->do_oidc_login_redirect($launch_url, $_REQUEST);
+        // $url = Url::fromRoute('learning_tool.launch', []);
+        // $url->setAbsolute(true);
+        // $launch_url = $url->toString();
+        $launch_url_hardcoded = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
+        $redirect = $login->do_oidc_login_redirect($launch_url_hardcoded);
 
         $redirect_url = $redirect->get_redirect_url();
+        
 
-        return new TrustedRedirectResponse($redirect_url);
+        $trusted_redirect = new TrustedRedirectResponse($redirect_url);
+        
+        return $trusted_redirect;
     }
 
 
