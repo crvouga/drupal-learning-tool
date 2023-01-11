@@ -13,9 +13,7 @@ use Symfony\Component\Validator\Constraints\DateTime;
 
 class LearningToolController extends ControllerBase
 {
-    // TODO: don't hardcode this
-    private static $launch_url = "http://localhost:8888/drupal-learning-tool/web/learning-tool/launch";
-
+    
     // 
     // 
     // LTI Routes 
@@ -24,7 +22,6 @@ class LearningToolController extends ControllerBase
     // 
     public function launch()
     {
-        
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         $launch->validate();
@@ -50,13 +47,6 @@ class LearningToolController extends ControllerBase
 
     private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
-
-
-        // 
-        // 
-        // 
-        // 
-        // 
 
         if(!$launch->has_ags()) {
             return [
@@ -140,20 +130,11 @@ class LearningToolController extends ControllerBase
             self::get_all_resources()
         );
 
-        // 
-        // TODO: somehow set launch_id in session.
-        // I think there is a problem with the session cookie not being set properly
-        // because the app is running inside of a iframe.
-        // 
-        // $launch_id = $launch->get_launch_id();
-        // $_SESSION['launch_id'] = $launch_id;
-        // 
-
-        return array(
+        return [
             "#theme" => "launch_deep_linking",
             "#deep_linking_return_url" => $deep_linking_return_url,
             "#resources" => $resources
-        );
+        ];
     }
 
 
@@ -167,7 +148,8 @@ class LearningToolController extends ControllerBase
         $launch_id_form = $_POST["launch_id"];
 
         $launch = LTI\LTI_Message_Launch::from_cache($launch_id_form, LTI_Database::new());
-        
+
+        // NOTE: this throws
         // $launch->validate();
         
         if(!$launch->is_resource_launch()) 
@@ -218,6 +200,8 @@ class LearningToolController extends ControllerBase
 
         $ags = $launch->get_ags();
 
+        // NOTE: current user has to be a student
+        // https://github.com/cengage/moodle-ltiservice_gradebookservices/blob/f223ca8493c7a8b181818a77d6419f76d7901c52/classes/local/resources/scores.php#L195
         $result = $ags->put_grade($grade);
 
         return [
@@ -227,13 +211,6 @@ class LearningToolController extends ControllerBase
     }
 
 
-    private static function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
-        $launch_data = $launch->get_launch_data();
-        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
-        $resource_id = $custom['id'];
-        $resource = self::get_one_resource_by_id($resource_id);
-        return $resource;
-    }
 
     // 
     // 
@@ -243,19 +220,10 @@ class LearningToolController extends ControllerBase
 
     public function keyset(Request $request)
     {
-           
-        // 
-        // TODO: somehow get launch_id from session
-        // 
-        // $launch_id = $_SESSION['launch_id'];
-        // 
-        // WHY? we can get the issuer from the launch_id
-        // 
-        // NOTICE: this is a hack. The LMS has to send it's issuer id
         $issuer = $request->query->get('issuer');
 
         if(!$issuer) {
-            $response = new JsonResponse(err("issuer must be provided"));
+            $response = new JsonResponse(["err", "issuer must be provided"]);
             $response->setStatusCode(400);
             return $response;
         }
@@ -276,39 +244,17 @@ class LearningToolController extends ControllerBase
         $db = LTI_Database::new();
         
         $login = LTI\LTI_OIDC_Login::new($db);
-        
-        $redirect = $login->do_oidc_login_redirect(self::$launch_url, $_REQUEST);
+
+        $url = Url::fromRoute('learning_tool.launch', []);
+        $url->setAbsolute(true);
+        $launch_url = $url->toString();
+
+        $redirect = $login->do_oidc_login_redirect($launch_url, $_REQUEST);
 
         $redirect_url = $redirect->get_redirect_url();
 
         return new TrustedRedirectResponse($redirect_url);
     }
-
-    // 
-    // 
-    // Resource Helpers
-    // 
-    // 
-
-    private static function get_all_resources()
-    {
-        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
-    }
-
-    private static function get_one_resource_by_id($resource_id)
-    {
-        $resources = self::get_all_resources();
-
-        foreach ($resources as $resource) {
-            if ($resource['id'] == $resource_id) {
-                return $resource;
-            }
-        }
-
-        return false;
-    }
-
-
 
 
     // 
@@ -319,21 +265,7 @@ class LearningToolController extends ControllerBase
     // 
     // 
 
-    private static function unregister_platform($issuer) {
-        $result = LTI_Database::unregister_platform(["issuer" => $issuer]);
-        return new JsonResponse($result);
-    }
-    private static function register_platform($issuer)
-    {
-        $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
-        $moodle_config = $platform_configs[$issuer];
-        if (!$moodle_config) {
-            return new JsonResponse(err("no config for $issuer"));
-        }
-        $result = LTI_Database::register_platform($moodle_config);
-        return new JsonResponse($result);
-    } 
-    
+
     public function register_moodle() {
         return self::register_platform("http://localhost:8888/moodle");
     }
@@ -356,15 +288,61 @@ class LearningToolController extends ControllerBase
         ];
         return new JsonResponse($output);
     }
-}
 
-//  
-//  
-//  
-//  docs: https://github.com/1EdTech/lti-1-3-php-library
-//  
-//  
-//  
+
+    // 
+    // 
+    // 
+    // Helpers
+    // 
+    // 
+    // 
+
+    private static function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
+        $launch_data = $launch->get_launch_data();
+        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
+        $resource_id = $custom['id'];
+        $resource = self::get_one_resource_by_id($resource_id);
+        return $resource;
+    }
+
+    private static function unregister_platform($issuer)
+    {
+        $result = LTI_Database::unregister_platform(["issuer" => $issuer]);
+        return new JsonResponse($result);
+    }
+    private static function register_platform($issuer)
+    {
+        $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
+        $moodle_config = $platform_configs[$issuer];
+        if (!$moodle_config) {
+            return new JsonResponse(["err", "no config for $issuer"]);
+        }
+        $result = LTI_Database::register_platform($moodle_config);
+        return new JsonResponse($result);
+    }
+    private static function get_all_resources()
+    {
+        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
+    }
+
+    private static function get_one_resource_by_id($resource_id)
+    {
+        $resources = self::get_all_resources();
+
+        foreach ($resources as $resource) {
+            if ($resource['id'] == $resource_id) {
+                return $resource;
+            }
+        }
+
+        return false;
+    }
+
+
+
+
+}
 
 class LTI_Database implements LTI\Database
 {
@@ -395,7 +373,8 @@ class LTI_Database implements LTI\Database
         //
         //
         // 
-        $tool_private_key = read_private_key();
+    
+        $tool_private_key = file_get_contents(__DIR__ . '/private.key');
 
         return LTI\LTI_Registration::new ()
             ->set_auth_login_url($auth_login_url)
@@ -434,13 +413,13 @@ class LTI_Database implements LTI\Database
         ];
 
         if (!has_keys($input, $required_keys)) {
-            return err("missing required keys");
+            return ["err", "missing required keys"];
         }
 
         $found = self::find_many_platforms_by_issuer($input['issuer']);
 
         if(count($found) > 0) {
-            return err("platform already registered");
+            return ["err", "platform already registered"];
         }
 
         $fields = [
@@ -453,7 +432,7 @@ class LTI_Database implements LTI\Database
             ->fields($fields)
             ->execute();
 
-        return ok("registered platform");
+        return ['ok', 'registered platform'];
     }
 
 
@@ -464,7 +443,7 @@ class LTI_Database implements LTI\Database
         ];
 
         if (!has_keys($input, $required_keys)) {
-            return err("missing required keys");
+            return ["err", "missing required keys"];
         }
 
         $issuer = $input['issuer'];
@@ -472,7 +451,7 @@ class LTI_Database implements LTI\Database
         $found = self::find_many_platforms_by_issuer($issuer);
 
         if(count($found) == 0) {
-            return err("platform not registered");
+            return ["err", "platform not registered"];
         }
 
         $connection = \Drupal::service('database');
@@ -480,15 +459,8 @@ class LTI_Database implements LTI\Database
         $query = $connection->query("DELETE FROM $table_name WHERE issuer = '$issuer'");
         $query->execute();
 
-        return ok("unregistered platform");
+        return ['ok', 'unregistered platform'];
     }
-
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
 
     private static function find_many_platforms_by_issuer($issuer)
     {
@@ -502,14 +474,6 @@ class LTI_Database implements LTI\Database
 
 }
 
-
-function read_private_key()
-{
-    $private_key_path = __DIR__ . '/private.key';
-    $my_private_key = file_get_contents($private_key_path);
-    return $my_private_key;
-}
-
 // 
 // 
 // 
@@ -518,18 +482,7 @@ function read_private_key()
 // 
 // 
 
-function ok($data)
-{
-    return ["type" => "ok", "data" => $data];
-}
-
-function err($err)
-{
-    return ["type" => "err", "err" => $err];
-}
 function has_keys($input, $required_keys)
 {
-    $inputKeys = array_keys($input);
-    $missingRequiredKeys = array_diff($required_keys, $inputKeys);
-    return empty($missingRequiredKeys);
+    return empty(array_diff($required_keys, array_keys($input)));
 }
