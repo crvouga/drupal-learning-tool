@@ -8,7 +8,6 @@ use Drupal\Core\Url;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Constraints\DateTime;
 
 
 class LearningToolController extends ControllerBase
@@ -110,25 +109,25 @@ class LearningToolController extends ControllerBase
     
     private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
-        $dl = $launch->get_deep_link();
+        // 
         $launch_data = $launch->get_launch_data();
         $deep_linking_return_url = $launch_data["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"]["deep_link_return_url"];
 
-        $resources = array_map(
-            function($resource) use ($dl) {
-                $lti_resource = LTI\LTI_Deep_Link_Resource::new()
-                    ->set_url($resource['url'])
-                    ->set_custom_params($resource)
-                    ->set_title($resource['title']);
+        // 
+        $dl = $launch->get_deep_link();
+        $append_jwt = function ($resource) use ($dl) {
+            $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
+                ->set_url($resource['url'])
+                ->set_custom_params($resource)
+                ->set_title($resource['title']);
 
-                $jwt = $dl->get_response_jwt([$lti_resource]);
+            $jwt = $dl->get_response_jwt([$lti_resource]);
 
-                $resource['jwt'] = $jwt;
+            $resource['jwt'] = $jwt;
 
-                return $resource;
-            },
-            self::get_all_resources()
-        );
+            return $resource;
+        };
+        $resources = array_map($append_jwt, self::get_all_resources());
 
         return [
             "#theme" => "launch_deep_linking",
@@ -136,7 +135,6 @@ class LearningToolController extends ControllerBase
             "#resources" => $resources
         ];
     }
-
 
     // 
     // 
@@ -204,9 +202,8 @@ class LearningToolController extends ControllerBase
         // https://github.com/cengage/moodle-ltiservice_gradebookservices/blob/f223ca8493c7a8b181818a77d6419f76d7901c52/classes/local/resources/scores.php#L195
         $result = $ags->put_grade($grade);
 
-
         $success_title = "$score_given / $score_maximum is your score.";
-        
+
         $title = str_contains($result["headers"][0], "200") ? $success_title : "Error - Sent over an invalid grade";
 
         return [
