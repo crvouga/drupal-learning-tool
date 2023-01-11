@@ -155,10 +155,13 @@ class LearningToolController extends ControllerBase
     // 
     // 
 
-    public function grade() {
+    public function grade() 
+    {
         $launch_id_form = $_POST["launch_id"];
 
         $launch = LTI\LTI_Message_Launch::from_cache($launch_id_form, LTI_Database::new());
+
+        $launch_data = $launch->get_launch_data();
 
         // NOTE: this throws
         // $launch->validate();
@@ -190,8 +193,7 @@ class LearningToolController extends ControllerBase
         $score_maximum = 100;
         $score_given = $choice == $resource["answer"] ? 100 : 1;
 
-
-        $external_user_id = $launch->get_launch_data()["sub"];
+        $external_user_id = $launch_data["sub"];
 
         $grade = LTI\LTI_Grade::new ()
             ->set_score_given($score_given)
@@ -201,6 +203,7 @@ class LearningToolController extends ControllerBase
             ->set_timestamp(date("c"))
             ->set_user_id($external_user_id);
 
+    
 
         if(!$launch->has_ags()) 
         {
@@ -211,19 +214,30 @@ class LearningToolController extends ControllerBase
 
         $ags = $launch->get_ags();
 
-        // NOTE: current user has to be a student
         // https://github.com/cengage/moodle-ltiservice_gradebookservices/blob/f223ca8493c7a8b181818a77d6419f76d7901c52/classes/local/resources/scores.php#L195
         $result = $ags->put_grade($grade);
 
-        $success_title = "$score_given / $score_maximum is your score.";
+        $is_ok = str_contains($result["headers"][0], "200");
+    
+        if($is_ok) {
+            return [
+                "#title" => "$score_given / $score_maximum is your score."
+            ];
+        }
 
-        $title = str_contains($result["headers"][0], "200") ? $success_title : "Error - Sent over an invalid grade";
+        $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
+        $is_learner = in_array("http://purl.imsglobal.org/vocab/lis/v2/membership#Learner", $roles);
+
+        if(!$is_learner) {
+            return [
+                "#title" => "Error - Probably failed because you're not a student."
+            ];
+        }
 
         return [
-            "#title" => $title,
+            "#title" => "Error - Something went wrong."
         ];
     }
-
 
 
     // 
@@ -256,7 +270,7 @@ class LearningToolController extends ControllerBase
     public function login()
     {
         $db = LTI_Database::new();
-        
+
         $login = LTI\LTI_OIDC_Login::new($db);
 
         $redirect = $login->do_oidc_login_redirect($this->launch_url);
@@ -310,6 +324,8 @@ class LearningToolController extends ControllerBase
     // 
     // 
 
+    
+    
     private static function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
         $launch_data = $launch->get_launch_data();
         $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
