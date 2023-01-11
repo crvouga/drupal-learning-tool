@@ -42,10 +42,10 @@
         {{resource.question}}
     </h2>
 
-    <form method="POST" action="{{ grade_url }}">
+    <form method="POST" action="{{ grade_action }}">
         <input type="hidden" name="launch_id" value="{{ launch_id }}" />
 
-        <select name="grade">
+        <select name="choice">
             {% for choice in resource.choices %}
                 <option value="{{choice}}">{{choice}}</option>
             {% endfor %}

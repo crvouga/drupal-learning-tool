@@ -4,7 +4,7 @@ namespace Drupal\learning_tool\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
-use Drupal\learning_tool\Form\AssignmentForm;
+use Drupal\Core\Url;
 use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,16 +49,54 @@ class LearningToolController extends ControllerBase
 
     private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
+
+
         // 
+        // 
+        // 
+        // 
+        // 
+
+        if(!$launch->has_ags()) {
+            return [
+                "#title" => "Error. Must have assignments and grades enabled"
+            ];
+        }
+
+        
+        $scope = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["scope"];
+        $endpoint = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["lineitem"];
+        $db = LTI_Database::new();
+        $registration = $db->find_registration_by_issuer($launch_data["iss"]);
+        if(!$registration) {
+            return [ "#title" => "Error. Registration not found"];
+        }
+        $service_connector = new LTI\LTI_Service_Connector($registration);
+        
+        // $ags = $launch->get_ags();
+        $result = $service_connector->make_service_request($scope, "GET", $endpoint);
+        $line_item = new LTI\LTI_Lineitem($result['body']);
+        
+
+
+
+
+
+        // $ags->get_grades();
+
+
+        // 
+        // 
+        // 
+        // 
+        // 
+
         $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
         $email = $launch_data['email'];
         $given_name = $launch_data['given_name'];
         $family_name = $launch_data['family_name'];
         // 
-        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
-        $resource_id = $custom['id'];
-
-        $resource = self::get_one_resource_by_id($resource_id);
+        $resource = self::get_resource_from_launch($launch);
 
         if(!$resource) {
             return [
@@ -68,38 +106,23 @@ class LearningToolController extends ControllerBase
 
         $launch_id = $launch->get_launch_id();
 
-        return array(
+        $url = Url::fromRoute('learning_tool.grade', []);
+        $url->setAbsolute(true);
+        $grade_action = $url->toString();
+
+        return [
             "#theme" => "launch_resource",
+            //
             "#roles" => $roles,
             "#email" => $email,
             "#name" => "$given_name $family_name",
             // 
             "#resource" => $resource,
-            "#grade_action" => "/learning-tool/grade",
+            "#grade_action" => $grade_action,
             "#launch_id" => $launch_id,
-        );
+        ];
     }
-
-    private static function get_all_resources()
-    {
-        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
-    }
-
-    private static function get_one_resource_by_id($resource_id) 
-    {
-        $resources = self::get_all_resources();
-
-        foreach ($resources as $resource) {
-            if ($resource['id'] == $resource_id) {
-                return $resource;
-            }
-        }
-
-        return false;
-    }
-
     
-
     private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
         $dl = $launch->get_deep_link();
@@ -138,23 +161,82 @@ class LearningToolController extends ControllerBase
         );
     }
 
-        private function grade() {
-        $form_values = $_POST;
-        $grade = $form_values['choice'];
-        $launch_id = $form_values['launch_id'];
-        $launch = LTI\LTI_Message_Launch::from_cache($launch_id,LTI_Database::new());
 
-        if(!$launch->has_gs()) {
+    // 
+    // 
+    // Grade Route
+    // 
+    // 
+
+    public function grade() {
+        $launch_id_form = $_POST["launch_id"];
+
+        $launch = LTI\LTI_Message_Launch::from_cache($launch_id_form, LTI_Database::new());
+        
+        // $launch->validate();
+        
+        if(!$launch->is_resource_launch()) 
+        {
+            return [
+                "#title" => "Error. Must be a resource launch"
+            ];
+        }
+
+        $resource = self::get_resource_from_launch($launch);
+
+        if(!$resource) 
+        {
+            return [
+                '#title' => 'Error. Resource not found',
+            ];
+        }
+
+        $choice = $_POST["choice"];
+    
+        if(!in_array($choice, $resource["choices"])) {
+            return [
+                "#title" => "Error. Invalid submission"
+            ];
+        }
+
+        $score_maximum = 1;
+        $score = $choice == $resource["answer"] ? 1 : 0;
+
+        $grade = LTI\LTI_Grade::new()
+            ->set_score_given($score)
+            ->set_score_maximum($score_maximum)
+            ->set_activity_progress("Completed")
+            ->set_grading_progress("FullyGraded")
+            ->set_timestamp(date(DATE_ATOM));
+
+        if(!$launch->has_ags()) 
+        {
             return [
                 "#title" => "Error. Grade service not available"
             ];
         }
+
+        $ags = $launch->get_ags();
+
+        $ags->put_grade($grade);
+
+        return [
+            "#title" => "Grade submitted"
+        ];
     }
 
 
+    private static function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
+        $launch_data = $launch->get_launch_data();
+        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
+        $resource_id = $custom['id'];
+        $resource = self::get_one_resource_by_id($resource_id);
+        return $resource;
+    }
+
     // 
     // 
-    // 
+    // Keyset Route
     // 
     // 
 
@@ -184,7 +266,7 @@ class LearningToolController extends ControllerBase
 
     // 
     // 
-    // 
+    // Login Route
     // 
     // 
     
@@ -200,6 +282,33 @@ class LearningToolController extends ControllerBase
 
         return new TrustedRedirectResponse($redirect_url);
     }
+
+    // 
+    // 
+    // Resource Helpers
+    // 
+    // 
+
+    private static function get_all_resources()
+    {
+        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
+    }
+
+    private static function get_one_resource_by_id($resource_id)
+    {
+        $resources = self::get_all_resources();
+
+        foreach ($resources as $resource) {
+            if ($resource['id'] == $resource_id) {
+                return $resource;
+            }
+        }
+
+        return false;
+    }
+
+
+
 
     // 
     // 
