@@ -17,11 +17,17 @@ Launch (aka Target Link) endpoint = /launch
 
 # LTI 1.3 Flows
 
-## Resource Launch Flow
+## Deep Linking Launch Flow
+
+This flow is launched with the adding the tool as an activity inside of a course in the hosting LMS.
+It "links" a "resource" to that activity so that resource can be access during the resource launch flow.
 
 - Step 1. Open Id Connect
 
-## Deep Linking Launch Flow
+## Resource Launch Flow
+
+This flow is launched when an activity is started inside of a course in the hosting LMS.
+This launch is associated with a resource that was deep linked during the activities creation.
 
 - Step 1. Open Id Connect
 
