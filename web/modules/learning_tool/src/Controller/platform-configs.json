@@ -7,12 +7,12 @@
     "auth_token_url": "http://localhost:8888/moodle/mod/lti/token.php",
     "key_set_url": "http://localhost:8888/moodle/mod/lti/certs.php"
   },
-  "http://canvas.docker": {
+  "https://canvas.instructure.com": {
     "name": "Canvas (Docker)",
-    "issuer": "http://canvas.docker",
+    "issuer": "https://canvas.instructure.com",
     "client_id": "10000000000001",
-    "auth_login_url": "http://canvas.docker/api/lti/authorize_redirect",
-    "auth_token_url": "http://canvas.docker/api/lti/authorize",
+    "auth_login_url": "http://canvas.docker/api/lti/authorize",
+    "auth_token_url": "http://canvas.docker/api/lti/advantage_token",
     "key_set_url": "http://canvas.docker/api/lti/security/jwks"
   }
 }

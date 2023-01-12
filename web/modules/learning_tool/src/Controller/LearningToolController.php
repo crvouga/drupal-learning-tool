@@ -60,11 +60,11 @@ class LearningToolController extends ControllerBase
     private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
 
-        if(!$launch->has_ags()) {
-            return [
-                "#title" => "Error. Must have assignments and grades enabled"
-            ];
-        }
+        // if(!$launch->has_ags()) {
+        //     return [
+        //         "#title" => "Error. Must have assignments and grades enabled"
+        //     ];
+        // }
 
         // TODO: check if assignment is completed
         
@@ -292,11 +292,11 @@ class LearningToolController extends ControllerBase
     // 
 
     public function register_canvas(){ 
-        return self::register_platform("http://canvas.docker");
+        return self::register_platform("https://canvas.instructure.com");
     }
 
     public function unregister_canvas(){
-        return self::unregister_platform("http://canvas.docker");
+        return self::unregister_platform("https://canvas.instructure.com");
     }
 
     public function register_moodle() {
