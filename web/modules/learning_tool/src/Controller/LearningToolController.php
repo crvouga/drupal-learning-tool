@@ -42,7 +42,7 @@ class LearningToolController extends ControllerBase
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         // unsure if this is needed.
-        // $launch->validate();
+        $launch->validate();
 
         if ($launch->is_resource_launch()) {
             return $this->launch_resource($launch);
@@ -215,7 +215,7 @@ class LearningToolController extends ControllerBase
 
         if(!$is_learner) {
             return [
-                "#title" => "Error - Probably failed because you're not a student."
+                "#title" => "Failed to submit. Probably because you're not a student."
             ];
         }
 
