@@ -1,6 +1,8 @@
 #
 #
 #
+# LTI
+#
 #
 #
 
@@ -41,7 +43,11 @@ learning_tool.grade:
 
 #
 #
+#
+#
 # Helpers
+#
+#
 #
 #
 
@@ -73,9 +79,16 @@ learning_tool.unregister_canvas:
   requirements:
     _permission: "access content"
 
-learning_tool.db:
-  path: /learning-tool/db
+learning_tool.platforms:
+  path: /learning-tool/platforms
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::db
+    _controller: Drupal\learning_tool\Controller\LearningToolController::platforms
+  requirements:
+    _permission: "access content"
+
+learning_tool.unregister_all:
+  path: /learning-tool/unregister-all
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::unregister_all
   requirements:
     _permission: "access content"

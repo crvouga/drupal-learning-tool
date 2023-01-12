@@ -28,15 +28,21 @@ class LearningToolController extends ControllerBase
 
     // 
     // 
+    // 
+    // 
+    // 
     // LTI Routes 
     // docs: https://github.com/1EdTech/lti-1-3-php-library
+    // 
+    // 
     // 
     // 
     public function launch()
     {
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
-        $launch->validate();
+        // unsure if this is needed.
+        // $launch->validate();
 
         if ($launch->is_resource_launch()) {
             return $this->launch_resource($launch);
@@ -59,29 +65,8 @@ class LearningToolController extends ControllerBase
 
     private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
-
-        // if(!$launch->has_ags()) {
-        //     return [
-        //         "#title" => "Error. Must have assignments and grades enabled"
-        //     ];
-        // }
-
         // TODO: check if assignment is completed
         
-        // $scope = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["scope"];
-        // $endpoint = $launch_data["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"]["lineitem"];
-        // $db = LTI_Database::new();
-        // $registration = $db->find_registration_by_issuer($launch_data["iss"]);
-        // if(!$registration) {
-        //     return [ "#title" => "Error. Registration not found"];
-        // }
-        // $service_connector = new LTI\LTI_Service_Connector($registration);
-        // // $ags = $launch->get_ags();
-        // $result = $service_connector->make_service_request($scope, "GET", $endpoint);
-        // $line_item = new LTI\LTI_Lineitem($result['body']);
-        // $ags->get_grades();
-
-
         // 
         // 
         // 
@@ -286,42 +271,46 @@ class LearningToolController extends ControllerBase
     // 
     // 
     // 
+    // 
+    // 
     // Helper Routes
     // 
     // 
     // 
+    // 
+    // 
 
-    public function register_canvas(){ 
+    public function register_canvas()
+    {
         return self::register_platform("https://canvas.instructure.com");
     }
 
-    public function unregister_canvas(){
+    public function unregister_canvas()
+    {
         return self::unregister_platform("https://canvas.instructure.com");
     }
 
-    public function register_moodle() {
+    public function register_moodle() 
+    {
         return self::register_platform("http://localhost:8888/moodle");
     }
     
-    public function unregister_moodle() {
+    public function unregister_moodle() 
+    {
         return self::unregister_platform("http://localhost:8888/moodle");
     }
 
-    public function db() {
-        $database = \Drupal::service('database');
-        $query = $database->query("SELECT * FROM learning_tool_platforms");
-        $rows = $query->fetchAll();
-        $output = [
-            "learning_tool_platforms" => array_map(
-                function ($row) {
-                    return [ "id" => $row->id, "decoded_json_string" => json_decode($row->json_string, true)];
-                }, 
-                $rows
-            )
-        ];
-        return new JsonResponse($output);
+    public function unregister_all()
+    {
+        return new JsonResponse(LTI_Database::unregister_platform_all());
     }
 
+    public function platforms() 
+    {
+        return new JsonResponse(LTI_Database::find_all_platforms());
+    }
+
+    
 
     // 
     // 
@@ -497,13 +486,38 @@ class LTI_Database implements LTI\Database
         return ['ok', 'unregistered platform'];
     }
 
-    private static function find_many_platforms_by_issuer($issuer)
+    public static function unregister_platform_all()
+    {
+        $connection = \Drupal::service('database');
+        $table_name = self::$table_name;
+        $query = $connection->query("DELETE FROM $table_name");
+        $query->execute();
+        return ['ok', 'unregistered all platform'];
+    }
+
+    public static function find_many_platforms_by_issuer($issuer)
     {
         $database = \Drupal::service('database');
         $table_name = self::$table_name;
         $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer'");
         $found = $query->fetchAll();
         return $found;
+    }
+
+    public static function find_all_platforms()
+    {
+        $database = \Drupal::service('database');
+        $query = $database->query("SELECT * FROM learning_tool_platforms");
+        $rows = $query->fetchAll();
+        $output = [
+            "learning_tool_platforms" => array_map(
+                function ($row) {
+                    return [ "id" => $row->id, "decoded_json_string" => json_decode($row->json_string, true)];
+                }, 
+                $rows
+            )
+        ];
+        return $output;
     }
 
 
