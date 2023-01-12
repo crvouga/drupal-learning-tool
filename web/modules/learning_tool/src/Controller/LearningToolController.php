@@ -291,6 +291,13 @@ class LearningToolController extends ControllerBase
     // 
     // 
 
+    public function register_canvas(){ 
+        return self::register_platform("http://canvas.docker");
+    }
+
+    public function unregister_canvas(){
+        return self::unregister_platform("http://canvas.docker");
+    }
 
     public function register_moodle() {
         return self::register_platform("http://localhost:8888/moodle");

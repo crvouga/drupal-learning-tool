@@ -59,7 +59,21 @@ learning_tool.unregister_moodle:
   requirements:
     _permission: "access content"
 
-learning_tool.platforms:
+learning_tool.register_canvas:
+  path: /learning-tool/register/canvas
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::register_canvas
+  requirements:
+    _permission: "access content"
+
+learning_tool.unregister_canvas:
+  path: /learning-tool/unregister/canvas
+  defaults:
+    _controller: Drupal\learning_tool\Controller\LearningToolController::unregister_canvas
+  requirements:
+    _permission: "access content"
+
+learning_tool.db:
   path: /learning-tool/db
   defaults:
     _controller: Drupal\learning_tool\Controller\LearningToolController::db
