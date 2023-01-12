@@ -41,3 +41,9 @@ output:
 ```
 your url is: https://drupal-learning-tool.loca.lt
 ```
+
+# Canvas Setup
+
+## Local Setup
+
+1.) https://github.com/instructure/canvas-lms/wiki/Quick-Start
