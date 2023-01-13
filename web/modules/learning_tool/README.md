@@ -36,7 +36,7 @@ This launch is associated with a resource that was deep linked during the activi
 
 # Pitfalls
 
-## Tools running inside Canvas must use HTTP
+## Pitfall: LTI Tools running inside of Canvas must use HTTPS
 
 Solution: Using tunneling
 https://github.com/localtunnel/localtunnel
