@@ -433,7 +433,7 @@ class LTI_Database implements LTI\Database
             return ["err", "missing required keys"];
         }
 
-        $found_result = self::find_many_platforms_by_indexes($input);
+        $found_result = self::find_many_platforms_by_issuer($input);
 
         if($found_result[0] == 'err') {
             return $found_result;
@@ -480,6 +480,23 @@ class LTI_Database implements LTI\Database
         $found = $query->fetchAll();
         return ['ok', $found];
     }
+
+        public static function find_many_platforms_by_issuer($input)
+    {
+        $required_keys = ['issuer'];
+
+        if (!has_keys($input, $required_keys)) {
+            return ["err", "find_many_platforms_by_issuer. missing required keys"];
+        }
+
+        $database = \Drupal::service('database');
+        $table_name = self::$table_name;
+        $issuer = $input['issuer'];
+        $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer'");
+        $found = $query->fetchAll();
+        return ['ok', $found];
+    }
+
 
     public static function find_all_platforms()
     {
