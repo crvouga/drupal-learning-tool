@@ -13,17 +13,17 @@ learning_tool.launch:
   requirements:
     _permission: "access content"
 
-learning_tool.keyset:
-  path: /learning-tool/keyset
+learning_tool.jwks:
+  path: /learning-tool/jwks
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::keyset
+    _controller: Drupal\learning_tool\Controller\LearningToolController::jwks
   requirements:
     _permission: "access content"
 
-learning_tool.login:
-  path: /learning-tool/login
+learning_tool.open-id-connect:
+  path: /learning-tool/open-id-connect
   defaults:
-    _controller: Drupal\learning_tool\Controller\LearningToolController::login
+    _controller: Drupal\learning_tool\Controller\LearningToolController::open_id_connect
   requirements:
     _permission: "access content"
 

@@ -41,8 +41,15 @@ class LearningToolController extends ControllerBase
     {
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
-        // unsure if this is needed.
-        $launch->validate();
+        
+        try {
+            $launch->validate();
+        } catch (\Exception $e) {
+            return [
+                '#title' => 'Problem. Invalid launch',
+            ];
+        }
+    
 
         if ($launch->is_resource_launch()) {
             return $this->launch_resource($launch);
@@ -78,7 +85,7 @@ class LearningToolController extends ControllerBase
         $given_name = $launch_data['given_name'];
         $family_name = $launch_data['family_name'];
         // 
-        $resource = self::get_resource_from_launch($launch);
+        $resource = get_resource_from_launch($launch);
 
         if(!$resource) {
             return [
@@ -125,7 +132,7 @@ class LearningToolController extends ControllerBase
 
             return $resource;
         };
-        $resources = array_map($append_jwt, self::get_all_resources());
+        $resources = array_map($append_jwt, get_all_resources());
 
         return [
             "#theme" => "launch_deep_linking",
@@ -158,7 +165,7 @@ class LearningToolController extends ControllerBase
             ];
         }
 
-        $resource = self::get_resource_from_launch($launch);
+        $resource = get_resource_from_launch($launch);
 
         if(!$resource) 
         {
@@ -227,11 +234,11 @@ class LearningToolController extends ControllerBase
 
     // 
     // 
-    // Keyset Route
+    // JWKS Keyset Route
     // 
     // 
 
-    public function keyset(Request $request)
+    public function jwks(Request $request)
     {
         $issuer = $request->query->get('issuer');
 
@@ -252,7 +259,7 @@ class LearningToolController extends ControllerBase
     // 
     // 
     
-    public function login()
+    public function open_id_connect()
     {
         $db = LTI_Database::new();
 
@@ -282,22 +289,22 @@ class LearningToolController extends ControllerBase
 
     public function register_canvas()
     {
-        return self::register_platform("https://canvas.instructure.com");
+        return register_platform("https://canvas.instructure.com");
     }
 
     public function unregister_canvas()
     {
-        return self::unregister_platform("https://canvas.instructure.com");
+        return unregister_platform("https://canvas.instructure.com");
     }
 
     public function register_moodle() 
     {
-        return self::register_platform("http://localhost:8888/moodle");
+        return register_platform("http://localhost:8888/moodle");
     }
     
     public function unregister_moodle() 
     {
-        return self::unregister_platform("http://localhost:8888/moodle");
+        return unregister_platform("http://localhost:8888/moodle");
     }
 
     public function unregister_all()
@@ -307,66 +314,13 @@ class LearningToolController extends ControllerBase
 
     public function platforms() 
     {
-        return new JsonResponse(LTI_Database::find_all_platforms());
+        $found = LTI_Database::find_all_platforms();
+        return new JsonResponse($found);
     }
-
-    
-
-    // 
-    // 
-    // 
-    // Helpers
-    // 
-    // 
-    // 
-
-    
-    
-    private static function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
-        $launch_data = $launch->get_launch_data();
-        $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
-        $resource_id = $custom['id'];
-        $resource = self::get_one_resource_by_id($resource_id);
-        return $resource;
-    }
-
-    private static function unregister_platform($issuer)
-    {
-        $result = LTI_Database::unregister_platform(["issuer" => $issuer]);
-        return new JsonResponse($result);
-    }
-    private static function register_platform($issuer)
-    {
-        $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
-        $moodle_config = $platform_configs[$issuer];
-        if (!$moodle_config) {
-            return new JsonResponse(["err", "no config for $issuer"]);
-        }
-        $result = LTI_Database::register_platform($moodle_config);
-        return new JsonResponse($result);
-    }
-    private static function get_all_resources()
-    {
-        return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
-    }
-
-    private static function get_one_resource_by_id($resource_id)
-    {
-        $resources = self::get_all_resources();
-
-        foreach ($resources as $resource) {
-            if ($resource['id'] == $resource_id) {
-                return $resource;
-            }
-        }
-
-        return false;
-    }
-
-
-
-
 }
+
+
+
 
 class LTI_Database implements LTI\Database
 {
@@ -415,7 +369,9 @@ class LTI_Database implements LTI\Database
     // 
     // 
     // 
+    // 
     // Helpers
+    // 
     // 
     // 
     // 
@@ -523,6 +479,8 @@ class LTI_Database implements LTI\Database
 
 }
 
+
+// 
 // 
 // 
 // 
@@ -530,8 +488,51 @@ class LTI_Database implements LTI\Database
 // 
 // 
 // 
+//  
 
 function has_keys($input, $required_keys)
 {
     return empty(array_diff($required_keys, array_keys($input)));
+}
+
+function get_resource_from_launch(LTI\LTI_Message_Launch $launch) {
+    $launch_data = $launch->get_launch_data();
+    $custom = $launch_data["https://purl.imsglobal.org/spec/lti/claim/custom"];
+    $resource_id = $custom['id'];
+    $resource = get_one_resource_by_id($resource_id);
+    return $resource;
+}
+
+function unregister_platform($issuer)
+{
+    $result = LTI_Database::unregister_platform(["issuer" => $issuer]);
+    return new JsonResponse($result);
+}
+function register_platform($issuer)
+{
+    $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
+    $moodle_config = $platform_configs[$issuer];
+    if (!$moodle_config) {
+        return new JsonResponse(["err", "no config for $issuer"]);
+    }
+    $result = LTI_Database::register_platform($moodle_config);
+    return new JsonResponse($result);
+}
+
+function get_all_resources()
+{
+    return json_decode(file_get_contents(__DIR__ . '/resources.json'), true);
+}
+
+function get_one_resource_by_id($resource_id)
+{
+    $resources = get_all_resources();
+
+    foreach ($resources as $resource) {
+        if ($resource['id'] == $resource_id) {
+            return $resource;
+        }
+    }
+
+    return false;
 }

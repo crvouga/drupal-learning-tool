@@ -11,8 +11,8 @@ To enable the debugger make this is in the search params
 # LMS Setup
 
 BASE_URL = http://localhost:8888/drupal-learning-tool/web/learning-tool
-Login (aka OpenID) endpoint = /login
-Key (aka JWKS) endpoint = /keys
+Login (aka OpenID) endpoint = /open-id-connect
+Key (aka JWKS) endpoint = /jwks
 Launch (aka Target Link) endpoint = /launch
 
 # LTI 1.3 Flows
