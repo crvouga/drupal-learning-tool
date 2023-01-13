@@ -396,7 +396,13 @@ class LTI_Database implements LTI\Database
             return ["err", "missing required keys"];
         }
 
-        $found = self::find_many_platforms_by_issuer($input['issuer']);
+        $found_result = self::find_many_platforms_by_indexes($input);
+
+        if($found_result[0] == 'err') {
+            return $found_result;
+        }
+
+        $found = $found_result[1];
 
         if(count($found) > 0) {
             return ["err", "platform already registered"];
@@ -404,6 +410,7 @@ class LTI_Database implements LTI\Database
 
         $fields = [
             "issuer" => $input['issuer'],
+            "client_id" => $input['client_id'],
             "json_string" => json_encode($input),
         ];
         
@@ -426,9 +433,13 @@ class LTI_Database implements LTI\Database
             return ["err", "missing required keys"];
         }
 
-        $issuer = $input['issuer'];
+        $found_result = self::find_many_platforms_by_indexes($input);
 
-        $found = self::find_many_platforms_by_issuer($issuer);
+        if($found_result[0] == 'err') {
+            return $found_result;
+        }
+
+        $found = $found_result;
 
         if(count($found) == 0) {
             return ["err", "platform not registered"];
@@ -436,6 +447,8 @@ class LTI_Database implements LTI\Database
 
         $connection = \Drupal::service('database');
         $table_name = self::$table_name;
+        $issuer = $input['issuer'];
+        $client_id = $input['client_id'];
         $query = $connection->query("DELETE FROM $table_name WHERE issuer = '$issuer'");
         $query->execute();
 
@@ -451,13 +464,21 @@ class LTI_Database implements LTI\Database
         return ['ok', 'unregistered all platform'];
     }
 
-    public static function find_many_platforms_by_issuer($issuer)
+    public static function find_many_platforms_by_indexes($input)
     {
+        $required_keys = ['issuer', 'client_id'];
+
+        if (!has_keys($input, $required_keys)) {
+            return ["err", "find_many_platforms_by_indexes. missing required keys"];
+        }
+
         $database = \Drupal::service('database');
         $table_name = self::$table_name;
-        $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer'");
+        $issuer = $input['issuer'];
+        $client_id = $input['client_id'];
+        $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer' AND client_id = '$client_id'");
         $found = $query->fetchAll();
-        return $found;
+        return ['ok', $found];
     }
 
     public static function find_all_platforms()
@@ -511,12 +532,16 @@ function unregister_platform($issuer)
 function register_platform($issuer)
 {
     $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
-    $moodle_config = $platform_configs[$issuer];
-    if (!$moodle_config) {
-        return new JsonResponse(["err", "no config for $issuer"]);
+    $results = [];
+    foreach ($platform_configs as $config) {
+        if ($config['issuer'] != $issuer) {
+            continue;
+        }
+        
+        $result = LTI_Database::register_platform($config);
+        array_push($results, $result);
     }
-    $result = LTI_Database::register_platform($moodle_config);
-    return new JsonResponse($result);
+    return new JsonResponse($results);
 }
 
 function get_all_resources()

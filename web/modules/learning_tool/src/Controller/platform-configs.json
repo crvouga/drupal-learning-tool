@@ -1,5 +1,5 @@
-{
-  "http://localhost:8888/moodle": {
+[
+  {
     "name": "Moodle",
     "issuer": "http://localhost:8888/moodle",
     "client_id": "s6KjUEZZsAQfTWy",
@@ -7,12 +7,20 @@
     "auth_token_url": "http://localhost:8888/moodle/mod/lti/token.php",
     "key_set_url": "http://localhost:8888/moodle/mod/lti/certs.php"
   },
-  "https://canvas.instructure.com": {
-    "name": "Canvas (Docker)",
+  {
+    "name": "Canvas (Docker, localtunnel)",
     "issuer": "https://canvas.instructure.com",
     "client_id": "10000000000001",
     "auth_login_url": "http://canvas.docker/api/lti/authorize",
     "auth_token_url": "http://canvas.docker/api/lti/advantage_token",
     "key_set_url": "http://canvas.docker/api/lti/security/jwks"
+  },
+  {
+    "name": "Canvas (Docker, ngrok)",
+    "issuer": "https://canvas.instructure.com",
+    "client_id": "10000000000002",
+    "auth_login_url": "http://canvas.docker/api/lti/authorize",
+    "auth_token_url": "http://canvas.docker/api/lti/advantage_token",
+    "key_set_url": "http://canvas.docker/api/lti/security/jwks"
   }
-}
+]
