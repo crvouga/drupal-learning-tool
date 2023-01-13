@@ -19,8 +19,10 @@ Launch (aka Target Link) endpoint = /launch
 
 ## Deep Linking Launch Flow
 
-This flow is launched with the adding the tool as an activity inside of a course in the hosting LMS.
+This flow is launched when adding the tool to a course activity.
 It "links" a "resource" to that activity so that resource can be access during the resource launch flow.
+
+For example: when a teacher is adding an activity to a course the
 
 - Step 1. Open Id Connect
 
@@ -30,6 +32,7 @@ This flow is launched when an activity is started inside of a course in the host
 This launch is associated with a resource that was deep linked during the activities creation.
 
 - Step 1. Open Id Connect
+  The hosting LMS makes a request to an endpoint in the tool specified in the LMS. The tool
 
 # Pitfalls
 
