@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use \IMSGlobal\LTI;
+use Symfony\Component\EventDispatcher\Tests\CallableClass;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -41,16 +42,16 @@ class LearningToolController extends ControllerBase
     {
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
-        
         try {
             $launch->validate();
-        } catch (\Exception $e) {
+        } catch (LTI\LTI_Exception $e) {
+            $error_string = $e->getMessage();
             return [
                 '#title' => 'Problem. Invalid launch',
+                "#markup" => $error_string
             ];
         }
-    
-
+        
         if ($launch->is_resource_launch()) {
             return $this->launch_resource($launch);
         }
@@ -240,10 +241,12 @@ class LearningToolController extends ControllerBase
 
     public function jwks(Request $request)
     {
+
+        // TODO: shouldn't issuer always be in the request?
         $issuer = $request->query->get('issuer');
 
         if(!$issuer) {
-            $response = new JsonResponse(["err", "issuer must be provided"]);
+            $response = new JsonResponse(["err", "issuer must be provided in query params"]);
             $response->setStatusCode(400);
             return $response;
         }
@@ -259,18 +262,20 @@ class LearningToolController extends ControllerBase
     // 
     // 
     
-    public function open_id_connect()
+    public function open_id_connect(Request $request)
     {
+
         $db = LTI_Database::new();
 
         $login = LTI\LTI_OIDC_Login::new($db);
 
         $redirect = $login->do_oidc_login_redirect($this->launch_url);
     
+        // NOTE: when using canvas, this is query params not a full url
         $redirect_url = $redirect->get_redirect_url();
     
         $trusted_redirect = new TrustedRedirectResponse($redirect_url);
-
+    
         return $trusted_redirect;
     }
 
@@ -334,12 +339,48 @@ class LTI_Database implements LTI\Database
     // 
     // 
     // 
-    public function find_registration_by_issuer($issuer) {
-        $found = self::find_many_platforms_by_issuer($issuer);
+    public function find_registration_by_issuer($iss) {
+        $found_result = self::find_many_platforms_by_issuer($iss);
+
+        if($found_result[0] == 'err') {
+            return false;
+        }
+
+        $found = $found_result[1];
 
         if (count($found) == 0) {
             return false;
         }
+
+
+        
+        
+        // This is a hack because we're allowing multiple platforms for the same issuer which prob not a good idea :|
+        if($_REQUEST['client_id']) {
+            foreach ($found as $platform) {
+                $platform_data = json_decode($platform->json_string, true);
+    
+                $auth_login_url = $platform_data['auth_login_url'];
+                $auth_token_url = $platform_data['auth_token_url'];
+                $client_id = $platform_data['client_id'];
+                $key_set_url = $platform_data['key_set_url'];
+                $issuer = $platform_data['issuer'];
+                
+                if($client_id == $_REQUEST['client_id']) {
+                    $tool_private_key = file_get_contents(__DIR__ . '/private.key');
+
+                    return LTI\LTI_Registration::new ()
+                        ->set_auth_login_url($auth_login_url)
+                        ->set_auth_token_url($auth_token_url)
+                        ->set_client_id($client_id)
+                        ->set_key_set_url($key_set_url)
+                        ->set_issuer($issuer)
+                        ->set_tool_private_key($tool_private_key);
+                }
+            }
+        }
+        // end hack
+        
 
         $platform_data = json_decode($found[0]->json_string, true);
 
@@ -433,7 +474,9 @@ class LTI_Database implements LTI\Database
             return ["err", "missing required keys"];
         }
 
-        $found_result = self::find_many_platforms_by_issuer($input);
+        $issuer = $input['issuer'];
+        $client_id = $input['client_id'];
+        $found_result = self::find_many_platforms_by_issuer($issuer);
 
         if($found_result[0] == 'err') {
             return $found_result;
@@ -447,8 +490,7 @@ class LTI_Database implements LTI\Database
 
         $connection = \Drupal::service('database');
         $table_name = self::$table_name;
-        $issuer = $input['issuer'];
-        $client_id = $input['client_id'];
+    
         $query = $connection->query("DELETE FROM $table_name WHERE issuer = '$issuer'");
         $query->execute();
 
@@ -481,18 +523,12 @@ class LTI_Database implements LTI\Database
         return ['ok', $found];
     }
 
-        public static function find_many_platforms_by_issuer($input)
-    {
-        $required_keys = ['issuer'];
-
-        if (!has_keys($input, $required_keys)) {
-            return ["err", "find_many_platforms_by_issuer. missing required keys"];
-        }
-
+    public static function find_many_platforms_by_issuer(string $issuer)
+    {    
         $database = \Drupal::service('database');
         $table_name = self::$table_name;
-        $issuer = $input['issuer'];
-        $query = $database->query("SELECT * FROM $table_name WHERE issuer = '$issuer'");
+        $sql = "SELECT * FROM $table_name WHERE issuer = '$issuer'";
+        $query = $database->query($sql);
         $found = $query->fetchAll();
         return ['ok', $found];
     }
@@ -501,7 +537,8 @@ class LTI_Database implements LTI\Database
     public static function find_all_platforms()
     {
         $database = \Drupal::service('database');
-        $query = $database->query("SELECT * FROM learning_tool_platforms");
+        $table_name = self::$table_name;
+        $query = $database->query("SELECT * FROM $table_name");
         $rows = $query->fetchAll();
         $output = [
             "learning_tool_platforms" => array_map(
@@ -577,4 +614,13 @@ function get_one_resource_by_id($resource_id)
     }
 
     return false;
+}
+
+
+function attempt(Callable $f) {
+    try {
+        return ['ok', $f()];
+    } catch (\Exception $e) {
+        return ['err', $e];
+    }
 }
