@@ -10,6 +10,21 @@ use Symfony\Component\EventDispatcher\Tests\CallableClass;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
+/* 
+
+
+
+
+
+TODO: MUST FIX
+Indexing by platforms by issuer and client id causing breaking the tool
+
+
+
+
+
+
+*/
 
 class LearningToolController extends ControllerBase
 {
@@ -40,6 +55,7 @@ class LearningToolController extends ControllerBase
     // 
     public function launch()
     {
+
         $launch = LTI\LTI_Message_Launch::new(LTI_Database::new());
 
         try {
@@ -350,10 +366,7 @@ class LTI_Database implements LTI\Database
 
         if (count($found) == 0) {
             return false;
-        }
-
-
-        
+        }        
         
         // This is a hack because we're allowing multiple platforms for the same issuer which prob not a good idea :|
         if($_REQUEST['client_id']) {
@@ -379,7 +392,6 @@ class LTI_Database implements LTI\Database
                 }
             }
         }
-        // end hack
         
 
         $platform_data = json_decode($found[0]->json_string, true);
@@ -392,7 +404,6 @@ class LTI_Database implements LTI\Database
         //
         //
         // 
-    
         $tool_private_key = file_get_contents(__DIR__ . '/private.key');
 
         return LTI\LTI_Registration::new ()
@@ -403,6 +414,7 @@ class LTI_Database implements LTI\Database
             ->set_issuer($issuer)
             ->set_tool_private_key($tool_private_key);
     }
+
     public function find_deployment($iss, $deployment_id) {
         return LTI\LTI_Deployment::new ()->set_deployment_id($deployment_id);
     }
