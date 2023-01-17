@@ -38,7 +38,9 @@ class LearningToolController extends ControllerBase
         // 
         $url = Url::fromRoute('learning_tool.launch', []);
         $url->setAbsolute(true);
-        $this->launch_url = $url->toString();
+        $url->setOption('https', true);
+        $url_string = $url->toString();
+        $this->launch_url = $url_string;
     }
 
 
@@ -258,7 +260,7 @@ class LearningToolController extends ControllerBase
     public function jwks(Request $request)
     {
 
-        // TODO: shouldn't issuer always be in the request?
+        // TODO: the platform has to pass the issuer in the query params. should figure out away without query params
         $issuer = $request->query->get('issuer');
 
         if(!$issuer) {
@@ -285,7 +287,9 @@ class LearningToolController extends ControllerBase
 
         $login = LTI\LTI_OIDC_Login::new($db);
 
-        $redirect = $login->do_oidc_login_redirect($this->launch_url);
+        $launch_url = replace_http_with_https($this->launch_url);
+
+        $redirect = $login->do_oidc_login_redirect($launch_url);
     
         // NOTE: when using canvas, this is query params not a full url
         $redirect_url = $redirect->get_redirect_url();
@@ -340,9 +344,6 @@ class LearningToolController extends ControllerBase
     }
 }
 
-
-
-
 class LTI_Database implements LTI\Database
 {
 
@@ -367,31 +368,6 @@ class LTI_Database implements LTI\Database
         if (count($found) == 0) {
             return false;
         }        
-        
-        // This is a hack because we're allowing multiple platforms for the same issuer which prob not a good idea :|
-        if($_REQUEST['client_id']) {
-            foreach ($found as $platform) {
-                $platform_data = json_decode($platform->json_string, true);
-    
-                $auth_login_url = $platform_data['auth_login_url'];
-                $auth_token_url = $platform_data['auth_token_url'];
-                $client_id = $platform_data['client_id'];
-                $key_set_url = $platform_data['key_set_url'];
-                $issuer = $platform_data['issuer'];
-                
-                if($client_id == $_REQUEST['client_id']) {
-                    $tool_private_key = file_get_contents(__DIR__ . '/private.key');
-
-                    return LTI\LTI_Registration::new ()
-                        ->set_auth_login_url($auth_login_url)
-                        ->set_auth_token_url($auth_token_url)
-                        ->set_client_id($client_id)
-                        ->set_key_set_url($key_set_url)
-                        ->set_issuer($issuer)
-                        ->set_tool_private_key($tool_private_key);
-                }
-            }
-        }
         
 
         $platform_data = json_decode($found[0]->json_string, true);
@@ -598,16 +574,16 @@ function unregister_platform($issuer)
 function register_platform($issuer)
 {
     $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
-    $results = [];
-    foreach ($platform_configs as $config) {
-        if ($config['issuer'] != $issuer) {
-            continue;
-        }
-        
-        $result = LTI_Database::register_platform($config);
-        array_push($results, $result);
+    
+    $config = $platform_configs[$issuer];
+    
+    if(!$config) {
+        return new JsonResponse(["err", "platform for $issuer not found"]);
     }
-    return new JsonResponse($results);
+
+    $result = LTI_Database::register_platform($config);
+
+    return new JsonResponse($result);
 }
 
 function get_all_resources()
@@ -635,4 +611,12 @@ function attempt(Callable $f) {
     } catch (\Exception $e) {
         return ['err', $e];
     }
+}
+
+function replace_http_with_https($url) {
+    if(str_contains($url, "http://")) {
+        return str_replace("http://", "https://", $url);
+    }
+
+    return $url;
 }
