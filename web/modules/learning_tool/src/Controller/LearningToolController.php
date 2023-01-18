@@ -296,9 +296,6 @@ class LearningToolController extends ControllerBase
             ->set_timestamp(date("c"))
             ->set_user_id($external_user_id);
             
-
-    
-
         if(!$launch->has_ags()) 
         {
             return [
@@ -309,9 +306,9 @@ class LearningToolController extends ControllerBase
         $ags = $launch->get_ags();
 
         // https://github.com/cengage/moodle-ltiservice_gradebookservices/blob/f223ca8493c7a8b181818a77d6419f76d7901c52/classes/local/resources/scores.php#L195
-        $result = $ags->put_grade($grade);
+        $response = $ags->put_grade($grade);
 
-        $is_ok = str_contains($result["headers"][0], "200");
+        $is_ok = str_contains($response["headers"][0], "200");
     
         if($is_ok) {
             return [
@@ -329,7 +326,8 @@ class LearningToolController extends ControllerBase
         }
 
         return [
-            "#title" => "Error - Something went wrong."
+            "#title" => "Error - Something went wrong.",
+            "#markup" => "<pre>" . print_r($response, true) . "</pre>"
         ];
     }
 
