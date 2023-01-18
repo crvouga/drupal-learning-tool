@@ -6,7 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use \IMSGlobal\LTI;
-use Symfony\Component\EventDispatcher\Tests\CallableClass;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -107,9 +106,8 @@ class LearningToolController extends ControllerBase
         $resource = get_resource_from_launch($launch);
 
         if(!$resource) {
-            return [
-                '#title' => 'Resource not found',
-            ];
+            // we're just assuming that the LMS wants to link resources
+            return $this->launch_resource_linking($launch);
         }
 
         $launch_id = $launch->get_launch_id();
@@ -129,8 +127,92 @@ class LearningToolController extends ControllerBase
             "#grade_action" => $grade_action,
             "#launch_id" => $launch_id,
         ];
+        
     }
     
+    // 
+    // 
+    // idk why but Canvas LMS routes here when linking resources
+    // I thinks its because content selection in canvas does not support deep linking. 
+    // https://canvas.instructure.com/doc/api/file.link_selection_tools.html
+    // 
+    // 
+    private function launch_resource_linking(LTI\LTI_Message_Launch $launch)
+    {
+        // 
+        $launch_data = $launch->get_launch_data();
+        
+        $return_url = $launch_data["https://purl.imsglobal.org/spec/lti/claim/launch_presentation"]["return_url"];
+        
+        $resources = get_all_resources();
+        
+        $post_resource_url = Url::fromRoute('learning_tool.post_resource', []);
+        $post_resource_url->setAbsolute(true);
+        $post_resource_url_string = replace_http_with_https($post_resource_url->toString());
+
+        return [
+            "#theme" => "launch_resource_linking",
+            "#return_url" => $return_url,
+            "#launch_id" => $launch->get_launch_id(),
+            "#post_resource_url" => $post_resource_url_string,
+            "#resources" => $resources
+        ];
+    }
+
+    public function post_resource(Request $request) {
+        $launch_id_form = $request->request->get("launch_id");
+        $launch = LTI\LTI_Message_Launch::from_cache($launch_id_form, LTI_Database::new ());
+
+        $return_url = $request->request->get('return_url');
+        $resource_id = $request->request->get('resource_id');
+        $resource = get_one_resource_by_id($resource_id);
+
+        if(!$resource) {
+            return new JsonResponse([
+                "error" => "Resource not found"
+            ]);
+        }
+        
+        $resource['url'] = replace_http_with_https($resource['url']);
+
+        // 
+        // 
+        // TODO somehow post this data to the lms...
+        // 
+        // 
+        // 
+
+        $message = [
+            'lti_message_type' => 'ContentItemSelection',
+            'lti_version' => 'LTI-1p0',
+            'content_items' => [
+                "@context" => "http://purl.imsglobal.org/ctx/lti/v1/ContentItem",
+                "@graph" => [
+                    [
+                        "@type" => "LtiLinkItem",
+                        "@id" => $resource['url'],
+                        "url" => $resource['url'],
+                        "title" => $resource['title'],
+                        "text" => $resource['description'],
+                        "mediaType" => "application/vnd.ims.lti.v1.ltilink",
+                        "placementAdvice" => [
+                            "presentationDocumentTarget" => "frame"
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $redirect = new TrustedRedirectResponse($return_url);
+
+        return $redirect;
+    }
+
+    // 
+    // 
+    // Moodle LMS routes here when linking resources
+    // 
+    // 
     private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
         // 
@@ -142,7 +224,7 @@ class LearningToolController extends ControllerBase
         $append_jwt = function ($resource) use ($dl) {
             $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
                 ->set_url($resource['url'])
-                ->set_custom_params($resource)
+                ->set_custom_params(['id' => $resource['id']])
                 ->set_title($resource['title']);
 
             $jwt = $dl->get_response_jwt([$lti_resource]);
@@ -213,6 +295,7 @@ class LearningToolController extends ControllerBase
             ->set_grading_progress("FullyGraded")
             ->set_timestamp(date("c"))
             ->set_user_id($external_user_id);
+            
 
     
 
@@ -613,7 +696,7 @@ function attempt(Callable $f) {
     }
 }
 
-function replace_http_with_https($url) {
+function replace_http_with_https(string $url) {
     if(str_contains($url, "http://")) {
         return str_replace("http://", "https://", $url);
     }

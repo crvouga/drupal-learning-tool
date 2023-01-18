@@ -1,0 +1,36 @@
+<div style="padding: 3rem;">
+    <h1>
+        Resource Linking Launch
+    </h1>
+
+    <div style="display: flex; flex-direction: column; gap: 3rem;">
+        <div>
+            <h4>Return Url</h4>
+            <p>
+                {{ return_url }}
+            </p>
+
+            <h5>Post Resource Url</h5>
+            <p>
+                {{ post_resource_url }}
+            </p>
+        </div>
+
+        <div>
+            <h4>Select resource to link:</h4>
+
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+            {% for resource in resources %}
+                <form method="POST" action="{{ post_resource_url }}" style="display: flex; align-items: center;">
+                    <input type="hidden" name="launch_id" value="{{ launch_id }}" />
+                    <input type="hidden" name="return_url" value="{{ return_url }}" />
+                    <input type="hidden" name="resource_id" value="{{ resource.id }}" />
+                    <button type="submit" style="width: 100%; padding: 1rem;">
+                        {{ resource.title }} ({{ resource.question }})
+                    </button>
+                </form>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

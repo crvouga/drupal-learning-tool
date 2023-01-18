@@ -12,6 +12,14 @@ function learning_tool_theme($existing, $type, $theme, $path)
                 'resources' => [],
             ],
         ],
+        'launch_resource_linking' => [
+            'variables' => [
+                "launch_id" => null,
+                "post_resource_url" => null,
+                "return_url" => null,
+                'resources' => [],
+            ],
+        ],
         'launch_resource' => [
             'variables' => [
                 // 
