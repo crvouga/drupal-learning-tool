@@ -368,7 +368,9 @@ class LearningToolController extends ControllerBase
 
         $login = LTI\LTI_OIDC_Login::new($db);
 
-        $launch_url = replace_http_with_https($this->launch_url);
+        $target_link_uri = $_POST["target_link_uri"];
+
+        $launch_url = replace_http_with_https($target_link_uri);
 
         $redirect = $login->do_oidc_login_redirect($launch_url);
     
@@ -379,7 +381,6 @@ class LearningToolController extends ControllerBase
     
         return $trusted_redirect;
     }
-
 
     // 
     // 
