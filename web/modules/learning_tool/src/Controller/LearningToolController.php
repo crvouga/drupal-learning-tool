@@ -9,7 +9,7 @@ use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-/* 
+/*
 
 
 
@@ -27,33 +27,17 @@ Indexing by platforms by issuer and client id causing breaking the tool
 
 class LearningToolController extends ControllerBase
 {
-    
-
-    private $launch_url = "";
-
-    // constructor
-    public function __construct()
-    {
-        // 
-        $url = Url::fromRoute('learning_tool.launch', []);
-        $url->setAbsolute(true);
-        $url->setOption('https', true);
-        $url_string = $url->toString();
-        $this->launch_url = $url_string;
-    }
-
-
-    // 
-    // 
-    // 
-    // 
-    // 
-    // LTI Routes 
+    //
+    //
+    //
+    //
+    //
+    // LTI Routes
     // docs: https://github.com/1EdTech/lti-1-3-php-library
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
     public function launch()
     {
 
@@ -68,7 +52,7 @@ class LearningToolController extends ControllerBase
                 "#markup" => $error_string
             ];
         }
-        
+
         if ($launch->is_resource_launch()) {
             return $this->launch_resource($launch);
         }
@@ -91,18 +75,18 @@ class LearningToolController extends ControllerBase
     private function launch_resource(LTI\LTI_Message_Launch $launch){
         $launch_data = $launch->get_launch_data();
         // TODO: check if assignment is completed
-        
-        // 
-        // 
-        // 
-        // 
-        // 
+
+        //
+        //
+        //
+        //
+        //
 
         $roles = $launch_data["https://purl.imsglobal.org/spec/lti/claim/roles"];
         $email = $launch_data['email'];
         $given_name = $launch_data['given_name'];
         $family_name = $launch_data['family_name'];
-        // 
+        //
         $resource = get_resource_from_launch($launch);
 
         if(!$resource) {
@@ -122,30 +106,30 @@ class LearningToolController extends ControllerBase
             "#roles" => $roles,
             "#email" => $email,
             "#name" => "$given_name $family_name",
-            // 
+            //
             "#resource" => $resource,
             "#grade_action" => $grade_action,
             "#launch_id" => $launch_id,
         ];
-        
+
     }
-    
-    // 
-    // 
+
+    //
+    //
     // idk why but Canvas LMS routes here when linking resources
-    // I thinks its because content selection in canvas does not support deep linking. 
+    // I thinks its because content selection in canvas does not support deep linking.
     // https://canvas.instructure.com/doc/api/file.link_selection_tools.html
-    // 
-    // 
+    //
+    //
     private function launch_resource_linking(LTI\LTI_Message_Launch $launch)
     {
-        // 
+        //
         $launch_data = $launch->get_launch_data();
-        
+
         $return_url = $launch_data["https://purl.imsglobal.org/spec/lti/claim/launch_presentation"]["return_url"];
-        
+
         $resources = get_all_resources();
-        
+
         $post_resource_url = Url::fromRoute('learning_tool.post_resource', []);
         $post_resource_url->setAbsolute(true);
         $post_resource_url_string = replace_http_with_https($post_resource_url->toString());
@@ -172,15 +156,15 @@ class LearningToolController extends ControllerBase
                 "error" => "Resource not found"
             ]);
         }
-        
+
         $resource['url'] = replace_http_with_https($resource['url']);
 
-        // 
-        // 
+        //
+        //
         // TODO somehow post this data to the lms...
-        // 
-        // 
-        // 
+        //
+        //
+        //
 
         $message = [
             'lti_message_type' => 'ContentItemSelection',
@@ -208,18 +192,18 @@ class LearningToolController extends ControllerBase
         return $redirect;
     }
 
-    // 
-    // 
+    //
+    //
     // Moodle LMS routes here when linking resources
-    // 
-    // 
+    //
+    //
     private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
-        // 
+        //
         $launch_data = $launch->get_launch_data();
         $deep_linking_return_url = $launch_data["https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"]["deep_link_return_url"];
 
-        // 
+        //
         $dl = $launch->get_deep_link();
         $append_jwt = function ($resource) use ($dl) {
             $lti_resource = LTI\LTI_Deep_Link_Resource::new ()
@@ -242,13 +226,13 @@ class LearningToolController extends ControllerBase
         ];
     }
 
-    // 
-    // 
+    //
+    //
     // Grade Route
-    // 
-    // 
+    //
+    //
 
-    public function grade() 
+    public function grade()
     {
         $launch_id_form = $_POST["launch_id"];
 
@@ -258,8 +242,8 @@ class LearningToolController extends ControllerBase
 
         // NOTE: this throws
         // $launch->validate();
-        
-        if(!$launch->is_resource_launch()) 
+
+        if(!$launch->is_resource_launch())
         {
             return [
                 "#title" => "Error. Must be a resource launch"
@@ -268,7 +252,7 @@ class LearningToolController extends ControllerBase
 
         $resource = get_resource_from_launch($launch);
 
-        if(!$resource) 
+        if(!$resource)
         {
             return [
                 '#title' => 'Error. Resource not found',
@@ -276,7 +260,7 @@ class LearningToolController extends ControllerBase
         }
 
         $choice = $_POST["choice"];
-    
+
         if(!in_array($choice, $resource["choices"])) {
             return [
                 "#title" => "Error. Invalid submission"
@@ -295,8 +279,8 @@ class LearningToolController extends ControllerBase
             ->set_grading_progress("FullyGraded")
             ->set_timestamp(date("c"))
             ->set_user_id($external_user_id);
-            
-        if(!$launch->has_ags()) 
+
+        if(!$launch->has_ags())
         {
             return [
                 "#title" => "Error. Grade service not available"
@@ -309,7 +293,7 @@ class LearningToolController extends ControllerBase
         $response = $ags->put_grade($grade);
 
         $is_ok = str_contains($response["headers"][0], "200");
-    
+
         if($is_ok) {
             return [
                 "#title" => "$score_given / $score_maximum is your score."
@@ -332,11 +316,11 @@ class LearningToolController extends ControllerBase
     }
 
 
-    // 
-    // 
+    //
+    //
     // JWKS Keyset Route
-    // 
-    // 
+    //
+    //
 
     public function jwks(Request $request)
     {
@@ -351,16 +335,16 @@ class LearningToolController extends ControllerBase
         }
 
         $public_jwks = LTI\JWKS_Endpoint::from_issuer(LTI_Database::new(), $issuer)->get_public_jwks();
-        
+
         return new JsonResponse($public_jwks);
     }
 
-    // 
-    // 
+    //
+    //
     // Login Route
-    // 
-    // 
-    
+    //
+    //
+
     public function open_id_connect(Request $request)
     {
 
@@ -373,26 +357,26 @@ class LearningToolController extends ControllerBase
         $launch_url = replace_http_with_https($target_link_uri);
 
         $redirect = $login->do_oidc_login_redirect($launch_url);
-    
+
         // NOTE: when using canvas, this is query params not a full url
         $redirect_url = $redirect->get_redirect_url();
-    
+
         $trusted_redirect = new TrustedRedirectResponse($redirect_url);
-    
+
         return $trusted_redirect;
     }
 
-    // 
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
+    //
     // Helper Routes
-    // 
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
+    //
 
     public function register_canvas()
     {
@@ -404,12 +388,12 @@ class LearningToolController extends ControllerBase
         return unregister_platform("https://canvas.instructure.com");
     }
 
-    public function register_moodle() 
+    public function register_moodle()
     {
         return register_platform("http://localhost:8888/moodle");
     }
-    
-    public function unregister_moodle() 
+
+    public function unregister_moodle()
     {
         return unregister_platform("http://localhost:8888/moodle");
     }
@@ -419,7 +403,7 @@ class LearningToolController extends ControllerBase
         return new JsonResponse(LTI_Database::unregister_platform_all());
     }
 
-    public function platforms() 
+    public function platforms()
     {
         $found = LTI_Database::find_all_platforms();
         return new JsonResponse($found);
@@ -431,13 +415,13 @@ class LTI_Database implements LTI\Database
 
     public static $table_name = 'learning_tool_platforms';
 
-    // 
-    // 
-    // 
+    //
+    //
+    //
     // Required by LTI\Database Interface
-    // 
-    // 
-    // 
+    //
+    //
+    //
     public function find_registration_by_issuer($iss) {
         $found_result = self::find_many_platforms_by_issuer($iss);
 
@@ -449,8 +433,8 @@ class LTI_Database implements LTI\Database
 
         if (count($found) == 0) {
             return false;
-        }        
-        
+        }
+
 
         $platform_data = json_decode($found[0]->json_string, true);
 
@@ -461,7 +445,7 @@ class LTI_Database implements LTI\Database
         $issuer = $platform_data['issuer'];
         //
         //
-        // 
+        //
         $tool_private_key = file_get_contents(__DIR__ . '/private.key');
 
         return LTI\LTI_Registration::new ()
@@ -477,15 +461,15 @@ class LTI_Database implements LTI\Database
         return LTI\LTI_Deployment::new ()->set_deployment_id($deployment_id);
     }
 
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
     // Helpers
-    // 
-    // 
-    // 
-    // 
+    //
+    //
+    //
+    //
 
     public static function new()
     {
@@ -524,7 +508,7 @@ class LTI_Database implements LTI\Database
             "client_id" => $input['client_id'],
             "json_string" => json_encode($input),
         ];
-        
+
         \Drupal::database()
             ->insert(self::$table_name)
             ->fields($fields)
@@ -560,7 +544,7 @@ class LTI_Database implements LTI\Database
 
         $connection = \Drupal::service('database');
         $table_name = self::$table_name;
-    
+
         $query = $connection->query("DELETE FROM $table_name WHERE issuer = '$issuer'");
         $query->execute();
 
@@ -594,7 +578,7 @@ class LTI_Database implements LTI\Database
     }
 
     public static function find_many_platforms_by_issuer(string $issuer)
-    {    
+    {
         $database = \Drupal::service('database');
         $table_name = self::$table_name;
         $sql = "SELECT * FROM $table_name WHERE issuer = '$issuer'";
@@ -614,7 +598,7 @@ class LTI_Database implements LTI\Database
             "learning_tool_platforms" => array_map(
                 function ($row) {
                     return [ "id" => $row->id, "decoded_json_string" => json_decode($row->json_string, true)];
-                }, 
+                },
                 $rows
             )
         ];
@@ -625,15 +609,15 @@ class LTI_Database implements LTI\Database
 }
 
 
-// 
-// 
-// 
-// 
+//
+//
+//
+//
 // Helpers
-// 
-// 
-// 
-//  
+//
+//
+//
+//
 
 function has_keys($input, $required_keys)
 {
@@ -656,9 +640,9 @@ function unregister_platform($issuer)
 function register_platform($issuer)
 {
     $platform_configs = json_decode(file_get_contents(__DIR__ . '/platform-configs.json'), true);
-    
+
     $config = $platform_configs[$issuer];
-    
+
     if(!$config) {
         return new JsonResponse(["err", "platform for $issuer not found"]);
     }
