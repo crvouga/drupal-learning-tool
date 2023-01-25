@@ -9,22 +9,6 @@ use \IMSGlobal\LTI;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
-/*
-
-
-
-
-
-TODO: MUST FIX
-Indexing by platforms by issuer and client id causing breaking the tool
-
-
-
-
-
-
-*/
-
 class LearningToolController extends ControllerBase
 {
     //
@@ -114,13 +98,6 @@ class LearningToolController extends ControllerBase
 
     }
 
-    //
-    //
-    // idk why but Canvas LMS routes here when linking resources
-    // I thinks its because content selection in canvas does not support deep linking.
-    // https://canvas.instructure.com/doc/api/file.link_selection_tools.html
-    //
-    //
     private function launch_resource_linking(LTI\LTI_Message_Launch $launch)
     {
         //
@@ -192,11 +169,6 @@ class LearningToolController extends ControllerBase
         return $redirect;
     }
 
-    //
-    //
-    // Moodle LMS routes here when linking resources
-    //
-    //
     private function launch_deep_linking(LTI\LTI_Message_Launch $launch)
     {
         //
