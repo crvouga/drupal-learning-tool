@@ -297,6 +297,8 @@ class LearningToolController extends ControllerBase
     public function jwks(Request $request)
     {
 
+        dump($request);
+        exit();
         // TODO: the platform has to pass the issuer in the query params. should figure out away without query params
         $issuer = $request->query->get('issuer');
 
